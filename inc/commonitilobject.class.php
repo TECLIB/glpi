@@ -452,7 +452,8 @@ abstract class CommonITILObject extends CommonDBTM {
       $linktable = $linkclass->getTable();
 
       return countElementsInTable(array($itemtable,$linktable),
-                                  "`$linktable`.`$itemfk` = `$itemtable`.`id`
+                                  getEntitiesRestrictRequest("", $itemtable)."
+                                    AND `$linktable`.`$itemfk` = `$itemtable`.`id`
                                     AND `$linktable`.`users_id` = '$users_id'
                                     AND `$linktable`.`type` = '".CommonITILActor::REQUESTER."'
                                     AND `$itemtable`.`is_deleted` = 0
@@ -482,7 +483,8 @@ abstract class CommonITILObject extends CommonDBTM {
       $linktable = $linkclass->getTable();
 
       return countElementsInTable(array($itemtable,$linktable),
-                                  "`$linktable`.`$itemfk` = `$itemtable`.`id`
+                                  getEntitiesRestrictRequest("", $itemtable)."
+                                    AND `$linktable`.`$itemfk` = `$itemtable`.`id`
                                     AND `$linktable`.`users_id` = '$users_id'
                                     AND `$linktable`.`type` = '".CommonITILActor::ASSIGN."'
                                     AND `$itemtable`.`is_deleted` = 0
@@ -512,7 +514,8 @@ abstract class CommonITILObject extends CommonDBTM {
       $linktable = $linkclass->getTable();
 
       return countElementsInTable(array($itemtable,$linktable),
-                                  "`$linktable`.`$itemfk` = `$itemtable`.`id`
+                                  getEntitiesRestrictRequest("", $itemtable)."
+                                    AND `$linktable`.`$itemfk` = `$itemtable`.`id`
                                     AND `$linktable`.`groups_id` = '$groups_id'
                                     AND `$linktable`.`type` = '".CommonITILActor::ASSIGN."'
                                     AND `$itemtable`.`is_deleted` = 0
@@ -542,15 +545,16 @@ abstract class CommonITILObject extends CommonDBTM {
       $linktable = $linkclass->getTable();
 
       return countElementsInTable(array($itemtable,$linktable),
-            "`$linktable`.`$itemfk` = `$itemtable`.`id`
-            AND `$linktable`.`suppliers_id` = '$suppliers_id'
-            AND `$linktable`.`type` = '".CommonITILActor::ASSIGN."'
-            AND `$itemtable`.`is_deleted` = 0
-            AND `$itemtable`.`status`
-            NOT IN ('".implode("', '",
-            array_merge($this->getSolvedStatusArray(),
-                  $this->getClosedStatusArray())
-      )."')");
+                                  getEntitiesRestrictRequest("", $itemtable)."
+                                    AND `$linktable`.`$itemfk` = `$itemtable`.`id`
+                                    AND `$linktable`.`suppliers_id` = '$suppliers_id'
+                                    AND `$linktable`.`type` = '".CommonITILActor::ASSIGN."'
+                                    AND `$itemtable`.`is_deleted` = 0
+                                    AND `$itemtable`.`status`
+                                    NOT IN ('".implode("', '",
+                                                       array_merge($this->getSolvedStatusArray(),
+                                                                   $this->getClosedStatusArray())
+                                                      )."')");
    }
 
 
