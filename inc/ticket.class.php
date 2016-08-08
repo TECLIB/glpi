@@ -3144,6 +3144,7 @@ class Ticket extends CommonITILObject {
             echo "<td>".sprintf(__('%1$s%2$s'), __('Hardware type'),
                                 $tt->getMandatoryMark('items_id'))."</td>";
             echo "<td>";
+            $values['_canupdate'] = Session::haveRight('ticket', CREATE);
             Item_Ticket::itemAddForm($this, $values);
             echo "</td></tr>";
          }
@@ -4188,7 +4189,8 @@ class Ticket extends CommonITILObject {
       if (!$ID) {
          echo "<td rowspan='2'>";
          echo $tt->getBeginHiddenFieldValue('items_id');
-         if (Session::haveRight('ticket', CREATE)) {
+         $values['_canupdate'] = Session::haveRight('ticket', CREATE);
+         if ($values['_canupdate']) {
             Item_Ticket::itemAddForm($this, $values);
          }
          echo $tt->getEndHiddenFieldValue('items_id', $this);
@@ -4197,7 +4199,7 @@ class Ticket extends CommonITILObject {
       } else {
          echo "<td>";
          echo $tt->getBeginHiddenFieldValue('items_id');
-         $value['_canupdate'] = $canupdate || $canupdate_descr;
+         $values['_canupdate'] = $canupdate || $canupdate_descr;
          Item_Ticket::itemAddForm($this, $values);
          echo $tt->getEndHiddenFieldValue('items_id', $this);
          echo "</td>";

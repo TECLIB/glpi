@@ -710,7 +710,8 @@ class Config extends CommonDBTM {
       echo "</td>";
       if ($CFG_GLPI["enable_api"]) {
          echo "<td colspan='2'>";
-         echo "<a href='".APIRest::$api_url."'>".__("API inline Documentation")."</a>";
+         $inline_doc_api = trim($CFG_GLPI['url_base_api'], '/')."/";
+         echo "<a href='$inline_doc_api'>".__("API inline Documentation")."</a>";
          echo "</td>";
       }
       echo "</tr>";
@@ -1532,7 +1533,7 @@ class Config extends CommonDBTM {
          // echo "<tr><td><pre>Info:".print_r($info, true)."Stat:".print_r($stat, true)."</pre></td></tr>";
 
          // Memory
-         $max  = $info['num_seg'] + $info['seg_size'];
+         $max  = $info['num_seg'] * $info['seg_size'];
          $free = $info['avail_mem'];
          $used = $max - $free;
          $rate = round(100.0 * $used / $max);
