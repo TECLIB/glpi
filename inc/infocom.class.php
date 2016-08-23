@@ -1454,6 +1454,13 @@ class Infocom extends CommonDBChild {
       $tab[122]['forcegroupby']        = true;
       $tab[122]['joinparams']          = $joinparams;
 
+      $tab[123]['table']                = 'glpi_businesscriticities';
+      $tab[123]['field']                = 'name';
+      $tab[123]['name']                 = __('Business criticity');
+      $tab[123]['forcegroupby']         = true;
+      $tab[123]['joinparams']           = $complexjoinparams;
+      $tab[123]['datatype']             = 'dropdown';
+
       $tab[150]['table']               = 'glpi_infocoms';
       $tab[150]['field']               = 'decommission_date';
       $tab[150]['name']                = __('Decommission date');
