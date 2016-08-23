@@ -575,6 +575,23 @@ function update0905to91() {
    $migration->addField("glpi_entities", "autofill_decommission_date",
                         "string", array('value' => '-2'));
 
+   $migration->addField("glpi_infocoms", "businesscriticities_id", "integer");
+   $migration->addKey("glpi_infocoms", "businesscriticities_id");
+   if (!TableExists("glpi_businesscriticities")) {
+      $query = "CREATE TABLE `glpi_businesscriticities` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `comment` text COLLATE utf8_unicode_ci,
+        `date_mod` datetime DEFAULT NULL,
+        `date_creation` datetime DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `name` (`name`),
+        KEY `date_mod` (`date_mod`),
+        KEY `date_creation` (`date_creation`)
+      ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+      $DB->queryOrDie($query, "Add business criticity table");
+   }
+
    $migration->addField("glpi_states", "is_visible_softwarelicense", "bool");
    $migration->addKey("glpi_states", "is_visible_softwarelicense");
 

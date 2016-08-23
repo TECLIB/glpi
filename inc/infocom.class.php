@@ -1136,6 +1136,13 @@ class Infocom extends CommonDBChild {
             }
             echo "</td></tr>";
 
+            echo "<tr class='tab_bg_1'>";
+            echo "<td>".__('Business criticity')."</td><td>";
+            Dropdown::show('BusinessCriticity', array('value' => $ic->fields['businesscriticities_id']));
+            echo "</td>";
+            echo "<td colspan='2'>";
+            echo "</td></tr>";
+
             echo "<tr><th colspan='4'>".__('Warranty information')."</th></tr>";
             echo "<tr class='tab_bg_1'>";
             echo "<td>".__('Start date of warranty')."</td><td>";

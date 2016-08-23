@@ -105,7 +105,7 @@ class Notepad extends CommonDBChild {
     * @see CommonGLPI::getTabNameForItem()
    **/
    function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
-
+      Toolbox::logDebug(get_class($item), $item::$rightname, Session::haveRight($item::$rightname, READNOTE));
       if (Session::haveRight($item::$rightname, READNOTE)) {
          $nb = 0;
          if ($_SESSION['glpishow_count_on_tabs']) {

@@ -855,8 +855,10 @@ class Dropdown {
                         => array('DocumentCategory' => _n('Document heading', 'Document headings',
                                                           Session::getPluralNumber()),
                                  'DocumentType'     => _n('Document type', 'Document types',
-                                                          Session::getPluralNumber())
-                                ),
+                                                          Session::getPluralNumber()),
+                                 'BusinessCriticity' => _n('Business criticity', 'Business criticities',
+                                                         Session::getPluralNumber())
+                              ),
 
                     __('Tools')
                         => array('KnowbaseItemCategory' => _n('Knowledge base category',
