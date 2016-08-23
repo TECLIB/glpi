@@ -372,11 +372,11 @@ class RuleTicket extends Rule {
       $criterias['items_groups']['linkfield']               = 'items_groups';
       $criterias['items_groups']['type']                    = 'dropdown';
 
-      $criterias['items_businesscriticity']['table']       = 'glpi_businesscriticities';
-      $criterias['items_businesscriticity']['field']       = 'name';
-      $criterias['items_businesscriticity']['name']        = __('Business criticity');
-      $criterias['items_businesscriticity']['linkfield']   = 'items_businesscriticity';
-      $criterias['items_businesscriticity']['type']        = 'dropdown';
+      $criterias['items_businesscriticities']['table']       = 'glpi_businesscriticities';
+      $criterias['items_businesscriticities']['field']       = 'name';
+      $criterias['items_businesscriticities']['name']        = __('Business criticity');
+      $criterias['items_businesscriticities']['linkfield']   = 'items_businesscriticities';
+      $criterias['items_businesscriticities']['type']        = 'dropdown';
 
       $criterias['locations_id']['table']                   = 'glpi_locations';
       $criterias['locations_id']['field']                   = 'completename';
