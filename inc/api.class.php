@@ -871,10 +871,18 @@ abstract class API extends CommonGLPI {
 
       // filter with entity
       if ($item->isEntityAssign()) {
-         $where.= getEntitiesRestrictRequest(" AND",
+         $where.= "AND (". getEntitiesRestrictRequest("",
                                              $itemtype::getTable(),
                                              '',
-                                             $_SESSION['glpiactiveentities']);
+                                             $_SESSION['glpiactiveentities'],
+                                             false,
+                                             true);
+
+         if ($item instanceof Bookmark) {
+            $where.= " OR ".$itemtype::getTable().".entities_id = -1";
+         }
+
+         $where.= ")";
       }
 
       // build query
@@ -1683,8 +1691,8 @@ abstract class API extends CommonGLPI {
       global $CFG_GLPI;
 
       self::header(true, __("API Documentation"));
-      echo Html::css("../"."lib/prism/prism.css");
-      echo Html::script("../"."lib/prism/prism.js");
+      echo Html::css($CFG_GLPI['root_doc']."/lib/prism/prism.css");
+      echo Html::script($CFG_GLPI['root_doc']."/lib/prism/prism.js");
 
       echo "<div class='documentation'>";
       $documentation = file_get_contents(GLPI_ROOT.'/'.$file);
