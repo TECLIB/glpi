@@ -149,6 +149,10 @@ class APIRest extends API {
          $itemtype = $this->getItemtype(1);
          return $this->returnResponse($this->listSearchOptions($itemtype, $this->parameters));
 
+      // get multiple items (with various itemtype)
+      } else if ($resource === "getMultipleItems") {
+         return $this->returnResponse($this->getMultipleItems($this->parameters));
+
       // Search on itemtype
       } else if ($resource === "search") {
          self::checkSessionToken();
@@ -190,13 +194,14 @@ class APIRest extends API {
                   }
                } else {
                   // return collection of items
-                  $response = $this->getItems($itemtype, $this->parameters);
+                  $totalcount = 0;
+                  $response = $this->getItems($itemtype, $this->parameters, $totalcount);
 
                   //add pagination headers
                   if (!isset($this->parameters['range'])) {
                      $this->parameters['range'] = "0-50";
                   }
-                  $additionalheaders["Content-Range"] = $this->parameters['range']."/".count($response);
+                  $additionalheaders["Content-Range"] = $this->parameters['range']."/".$totalcount;
                   $additionalheaders["Accept-Range"]  = $itemtype." ".Toolbox::get_max_input_vars();
                }
                break;

@@ -783,10 +783,11 @@ abstract class API extends CommonGLPI {
     * - 'get_hateoas'      (default: true): show relations of items in a links attribute. Optionnal
     * - 'only_id'          (default: false): keep only id in fields list. Optionnal
     * - 'range'            (default: 0-50): limit the list to start-end attributes
+    * @param      integer $totalcount output parameter who receive the total count of the query resulat. As this function paginate results (with a mysql LIMIT), we can have the full range.
     *
     * @return     array collection of fields
     */
-   protected function getItems($itemtype, $params = array()) {
+   protected function getItems($itemtype, $params = array(), &$totalcount = 0) {
       global $DB;
       $this->initEndpoint();
 
@@ -814,7 +815,7 @@ abstract class API extends CommonGLPI {
          if (preg_match("/^[0-9]+-[0-9]+\$/", $params['range'])) {
             $range = explode("-", $params['range']);
             $params['start']      = $range[0];
-            $params['list_limit'] = $range[1]-$range[0];
+            $params['list_limit'] = $range[1]-$range[0]+1;
          } else {
             $this->returnError("range must be in format : [start-end] with integers");
          }
@@ -886,7 +887,7 @@ abstract class API extends CommonGLPI {
       }
 
       // build query
-      $query = "SELECT DISTINCT `$table`.id,  `$table`.*
+      $query = "SELECT SQL_CALC_FOUND_ROWS DISTINCT `$table`.id,  `$table`.*
                 FROM `$table`
                 $join
                 WHERE $where
@@ -898,6 +899,11 @@ abstract class API extends CommonGLPI {
          }
       }
 
+      // get result full row counts
+      $query_numtotalrow = "Select FOUND_ROWS()";
+      $result_numtotalrow = $DB->query($query_numtotalrow);
+      $data_numtotalrow = $DB->fetch_assoc($result_numtotalrow);
+      $totalcount = $data_numtotalrow['FOUND_ROWS()'];
 
       foreach ($found as $key => &$fields) {
          // only keep id in field list
@@ -919,6 +925,56 @@ abstract class API extends CommonGLPI {
       }
 
       return array_values($found);
+   }
+
+   /**
+    * Return a collection of items queried in input ($items)
+    *
+    * Call self::getItem for each line of $items
+    *
+    * @since version 9.1
+    *
+    * @param      array   $params   array with theses options :
+    *    - items:               array containing lines with itemtype and items_id keys
+    *                               Ex: [
+    *                                      [itemtype => 'Ticket', id => 102],
+    *                                      [itemtype => 'User',   id => 10],
+    *                                      [itemtype => 'User',   id => 11],
+    *                                   ]
+    *    - 'expand_dropdowns':  show dropdown's names instead of id. default: false. Optionnal
+    *    - 'get_hateoas':       show relation of current item in a links attribute. default: true. Optionnal
+    *    - 'with_components':   Only for [Computer, NetworkEquipment, Peripheral, Phone, Printer], Optionnal.
+    *    - 'with_disks':        Only for Computer, retrieve the associated filesystems. Optionnal.
+    *    - 'with_softwares':    Only for Computer, retrieve the associated softwares installations. Optionnal.
+    *    - 'with_connections':  Only for Computer, retrieve the associated direct connections (like peripherals and printers) .Optionnal.
+    *    - 'with_networkports': Retrieve all network connections and advanced network informations. Optionnal.
+    *    - 'with_infocoms':     Retrieve financial and administrative informations. Optionnal.
+    *    - 'with_contracts':    Retrieve associated contracts. Optionnal.
+    *    - 'with_documents':    Retrieve associated external documents. Optionnal.
+    *    - 'with_tickets':      Retrieve associated itil tickets. Optionnal.
+    *    - 'with_problems':     Retrieve associated itil problems. Optionnal.
+    *    - 'with_changes':      Retrieve associated itil changes. Optionnal.
+    *    - 'with_notes':        Retrieve Notes (if exists, not all itemtypes have notes). Optionnal.
+    *    - 'with_logs':         Retrieve historical. Optionnal.
+    *
+    * @return     array    collection of glpi object's fields
+    */
+   protected function getMultipleItems($params = array()) {
+      if (!is_array($params['items'])) {
+         return $this->messageBadArrayError();
+      }
+
+      $allitems = [];
+      foreach($params['items'] as $item) {
+         if (!isset($item['items_id']) && !isset($item['itemtype'])) {
+            return $this->messageBadArrayError();
+         }
+
+         $fields = $this->getItem($item['itemtype'], $item['items_id'], $params);
+         $allitems[] = $fields;
+      }
+
+      return $allitems;
    }
 
 
@@ -1089,7 +1145,7 @@ abstract class API extends CommonGLPI {
          if (preg_match("/^[0-9]+-[0-9]+\$/", $params['range'])) {
             $range = explode("-", $params['range']);
             $params['start']      = $range[0];
-            $params['list_limit'] = $range[1]-$range[0];
+            $params['list_limit'] = $range[1]-$range[0]+1;
             $params['range']      = $range;
          } else {
             $this->returnError("range must be in format : [start-end] with integers");
@@ -1147,6 +1203,7 @@ abstract class API extends CommonGLPI {
 
          // keep row itemtype for all asset
          if ($itemtype == 'AllAssets' ) {
+            $current_id       = $raw['id'];
             $current_itemtype = $raw['TYPE'];
          }
 
@@ -1179,6 +1236,7 @@ abstract class API extends CommonGLPI {
 
          // if all asset, provide type in returned data
          if ($itemtype == 'AllAssets') {
+            $current_line['id']       = $current_id;
             $current_line['itemtype'] = $current_itemtype;
          }
 
@@ -1216,7 +1274,7 @@ abstract class API extends CommonGLPI {
       }
 
       $cleaned_data['content-range'] = implode('-', $params['range']).
-                                       "/".$cleaned_data['count'];
+                                       "/".$cleaned_data['totalcount'];
 
       // return data
       return $cleaned_data;
@@ -1696,7 +1754,13 @@ abstract class API extends CommonGLPI {
 
       echo "<div class='documentation'>";
       $documentation = file_get_contents(GLPI_ROOT.'/'.$file);
-      echo ParsedownExtra::instance()->text($documentation);
+      $md = new Michelf\MarkdownExtra();
+      $md->code_class_prefix = "language-";
+      $md->header_id_func = function($headerName) {
+         $headerName = str_replace(array('(', ')'), '', $headerName);
+         return rawurlencode(strtolower(strtr($headerName, [' ' => '-'])));
+      };
+      echo $md->transform($documentation);
       echo "</div>";
 
       Html::nullFooter();
