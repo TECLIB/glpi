@@ -159,9 +159,7 @@ class Computer extends CommonDBTM {
       echo "<div class='center'>";
 
       $comp->initForm($ID);
-      $comp->showFormHeader();
-
-      echo "<table class='tab_cadre_fixe'>";
+      $comp->showFormHeader(['formtitle' => false]);
 
       echo "<tr class='headerRow'><th colspan='".$colspan."'>";
       echo __('Operating system');
@@ -207,9 +205,9 @@ class Computer extends CommonDBTM {
       echo "<td>".__('Serial number')."</td>";
       echo "<td >";
       Html::autocompletionTextField($comp, 'os_license_number');
-      echo "</td></tr>";
+      echo "</td><td colspan='2'></td></tr>";
 
-      $comp->showFormButtons();
+      $comp->showFormButtons(array('candel' => false));
 
       echo "</table>";
       echo "</div>";
@@ -626,13 +624,6 @@ class Computer extends CommonDBTM {
 
       // Display auto inventory informations
       $rowspan        = 4;
-      $inventory_show = false;
-
-      if (!empty($ID)
-          && Plugin::haveImport()
-          && $this->fields["is_dynamic"]) {
-         $inventory_show = true;
-      }
 
       echo "<td rowspan='$rowspan'>".__('Comments')."</td>";
       echo "<td rowspan='$rowspan' class='middle'>";
@@ -660,16 +651,12 @@ class Computer extends CommonDBTM {
       echo "<td >";
       AutoUpdateSystem::dropdown(array('value' => $this->fields["autoupdatesystems_id"]));
       echo "</td></tr>";
-
-
-      if (Plugin::haveImport() && $inventory_show) {
-         //echo "<td>".__('Automatic inventory')."</td>";
-         echo '<tr><td colspan="4">';
-         if ($ID && $this->fields['is_dynamic']) {
-            Plugin::doHook("autoinventory_information", $this);
-         } else {
-            _e('No');
-         }
+      // Display auto inventory informations
+      if (!empty($ID)
+          && Plugin::haveImport()
+          && $this->fields["is_dynamic"]) {
+         echo "<tr class='tab_bg_1'><td colspan='4'>";
+         Plugin::doHook("autoinventory_information", $this);
          echo "</td></tr>";
       }
 
@@ -786,10 +773,10 @@ class Computer extends CommonDBTM {
       $tab[44]['name']           = __('Product ID of the operating system');
       $tab[44]['datatype']       = 'string';
 
-      $tab[45]['table']          = 'glpi_operatingsystemarchitectures';
-      $tab[45]['field']          = 'name';
-      $tab[45]['name']           = __('Operating system architecture');
-      $tab[45]['datatype']       = 'dropdown';
+      $tab[61]['table']          = 'glpi_operatingsystemarchitectures';
+      $tab[61]['field']          = 'name';
+      $tab[61]['name']           = __('Operating system architecture');
+      $tab[61]['datatype']       = 'dropdown';
 
       $tab[47]['table']          = $this->getTable();
       $tab[47]['field']          = 'uuid';
