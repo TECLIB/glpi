@@ -68,6 +68,23 @@ class Computer extends CommonDBTM {
 
 
    /**
+    * @see CommonGLPI::getTabNameForItem()
+    *
+    * @since version 9.1
+   **/
+   function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
+
+      if (static::canView()) {
+         switch ($item->getType()) {
+            case __CLASS__ :
+               $ong = array(1 => __('Operating System'));
+               return $ong;
+         }
+      }
+   }
+
+
+   /**
     * @see CommonDBTM::useDeletedToLockIfDynamic()
     *
     * @since version 0.84
@@ -94,6 +111,7 @@ class Computer extends CommonDBTM {
 
       $ong = array();
       $this->addDefaultFormTab($ong)
+         ->addStandardTab(__CLASS__, $ong, $options)
          ->addStandardTab('Item_Devices', $ong, $options)
          ->addStandardTab('ComputerDisk', $ong, $options)
          ->addStandardTab('Computer_SoftwareVersion', $ong, $options)
@@ -114,6 +132,87 @@ class Computer extends CommonDBTM {
          ->addStandardTab('Log', $ong, $options);
 
       return $ong;
+   }
+
+
+   /**
+    * @param $item         CommonGLPI object
+    * @param $tabnum       (default 1)
+    * @param $withtemplate (default 0)
+    *
+    * @since version 9.1
+   **/
+   static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
+
+      self::showOperatingSystem($item);
+      return true;
+   }
+
+
+   /**
+    * Print the computer's operating system form
+    *
+    * @param $comp Computer object
+    *
+    * @since version 9.1
+    *
+    * @return Nothing (call to classes members)
+   **/
+   static function showOperatingSystem(Computer $comp) {
+      global $DB;
+
+      $ID = $comp->fields['id'];
+      $colspan = 4;
+
+      echo "<div class='center'>";
+
+      $comp->initForm($ID);
+      $comp->showFormHeader(['formtitle' => false]);
+
+      echo "<tr class='headerRow'><th colspan='".$colspan."'>";
+      echo __('Operating system');
+      echo "</th></tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>".__('Name')."</td>";
+      echo "<td>";
+      OperatingSystem::dropdown(array('value' => $comp->fields["operatingsystems_id"]));
+      echo "</td>";
+      echo "<td>".__('Version')."</td>";
+      echo "<td >";
+      OperatingSystemVersion::dropdown(array('value' => $comp->fields["operatingsystemversions_id"]));
+      echo "</td>";
+      echo "</tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>".__('Architecture')."</td>";
+      echo "<td >";
+      OperatingSystemArchitecture::dropdown(array('value'
+                                                 => $comp->fields["operatingsystemarchitectures_id"]));
+      echo "</td>";
+      echo "<td>".__('Service pack')."</td>";
+      echo "<td >";
+      OperatingSystemServicePack::dropdown(array('value'
+                                                 => $comp->fields["operatingsystemservicepacks_id"]));
+      echo "</td></tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>".__('Kernel version')."</td>";
+      echo "<td >";
+      Html::autocompletionTextField($comp, 'os_kernel_version');
+      echo "</td>";
+      echo "<td>".__('Product ID')."</td>";
+      echo "<td >";
+      Html::autocompletionTextField($comp, 'os_licenseid');
+      echo "</td></tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>".__('Serial number')."</td>";
+      echo "<td >";
+      Html::autocompletionTextField($comp, 'os_license_number');
+      echo "</td><td colspan='2'></td></tr>";
+
+      $comp->showFormButtons(array('candel' => false, 'formfooter' => false));
    }
 
 
@@ -528,15 +627,7 @@ class Computer extends CommonDBTM {
       echo "</td>";
 
       // Display auto inventory informations
-      $rowspan        = 7;
-      $inventory_show = false;
-
-      if (!empty($ID)
-          && Plugin::haveImport()
-          && $this->fields["is_dynamic"]) {
-         $inventory_show = true;
-         $rowspan       -= 5;
-      }
+      $rowspan        = 4;
 
       echo "<td rowspan='$rowspan'>".__('Comments')."</td>";
       echo "<td rowspan='$rowspan' class='middle'>";
@@ -553,89 +644,6 @@ class Computer extends CommonDBTM {
       echo "</td></tr>";
 
       echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Operating system')."</td>";
-      echo "<td>";
-      OperatingSystem::dropdown(array('value' => $this->fields["operatingsystems_id"]));
-      echo "<br /><a href='#' id='toggle_os_information'>".__("More information")."</a>";
-      echo "</td>";
-      if ($inventory_show) {
-         echo "<td rowspan='4' colspan='2'>";
-         Plugin::doHook("autoinventory_information", $this);
-         echo "</td>";
-      }
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Version of the operating system')."</td>";
-      echo "<td >";
-      OperatingSystemVersion::dropdown(array('value' => $this->fields["operatingsystemversions_id"]));
-      echo "</td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'><td colspan='2'>";
-      echo Html::scriptBlock("
-      $(document).ready(function(){
-         $('#os_information').hide();
-
-         $('#toggle_os_information').on('click',function() {
-            $('#os_information').dialog({
-               width:'auto',
-               resizable: false,
-               appendTo: '#os_information_parent',
-               position: {
-                  my : 'left top',
-                  at : 'left bottom',
-                  of: $('#toggle_os_information')
-               }
-            })
-         })
-      });");
-
-      // group os advanced information in a single bloc (who can be toggled)
-      echo "<div id='os_information_parent'>";
-      echo "<div id='os_information' title=\"".__('Operating system')."\">";
-      echo "<table>";
-      echo "<tr class='tab_bg_1'>";
-
-      echo "<td>".__('Service pack')."</td>";
-      echo "<td >";
-      OperatingSystemServicePack::dropdown(array('value'
-                                                 => $this->fields["operatingsystemservicepacks_id"]));
-      echo "</td></tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Operating system architecture')."</td>";
-      echo "<td >";
-      OperatingSystemArchitecture::dropdown(array('value'
-                                                 => $this->fields["operatingsystemarchitectures_id"]));
-      echo "</td></tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Kernel version of the operating system')."</td>";
-      echo "<td >";
-      Html::autocompletionTextField($this, 'os_kernel_version');
-      echo "</td></tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Product ID of the operating system')."</td>";
-      echo "<td >";
-      Html::autocompletionTextField($this, 'os_licenseid');
-      echo "</td></tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>".__('Serial of the operating system')."</td>";
-      echo "<td >";
-      Html::autocompletionTextField($this, 'os_license_number');
-      echo "</td>";
-
-
-      echo "</table>";
-      echo "</div>";
-      echo "</div>";
-      echo "</td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'>";
       echo "<td>".__('UUID')."</td>";
       echo "<td >";
       Html::autocompletionTextField($this, 'uuid');
@@ -647,6 +655,14 @@ class Computer extends CommonDBTM {
       echo "<td >";
       AutoUpdateSystem::dropdown(array('value' => $this->fields["autoupdatesystems_id"]));
       echo "</td></tr>";
+      // Display auto inventory informations
+      if (!empty($ID)
+          && Plugin::haveImport()
+          && $this->fields["is_dynamic"]) {
+         echo "<tr class='tab_bg_1'><td colspan='4'>";
+         Plugin::doHook("autoinventory_information", $this);
+         echo "</td></tr>";
+      }
 
       $this->showFormButtons($options);
 
@@ -761,10 +777,10 @@ class Computer extends CommonDBTM {
       $tab[44]['name']           = __('Product ID of the operating system');
       $tab[44]['datatype']       = 'string';
 
-      $tab[45]['table']          = 'glpi_operatingsystemarchitectures';
-      $tab[45]['field']          = 'name';
-      $tab[45]['name']           = __('Operating system architecture');
-      $tab[45]['datatype']       = 'dropdown';
+      $tab[61]['table']          = 'glpi_operatingsystemarchitectures';
+      $tab[61]['field']          = 'name';
+      $tab[61]['name']           = __('Operating system architecture');
+      $tab[61]['datatype']       = 'dropdown';
 
       $tab[47]['table']          = $this->getTable();
       $tab[47]['field']          = 'uuid';

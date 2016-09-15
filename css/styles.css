@@ -2,7 +2,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -582,6 +582,13 @@ input.save {
    position: absolute;
    right: 8px;
    top: 5px;
+}
+
+.ui-tabs .alltab sup.tab_nb {
+   position: relative;
+   top: 0;
+   right: 0;
+   background-color: #F1F1F1;
 }
 
 .ui-tabs .ui-state-active sup.tab_nb {
@@ -1723,6 +1730,21 @@ a.icon_nav_move:hover img {
    margin-left: 4px;
 }
 
+#planning .event_past .ui-widget-content,
+#planning .event_past .ui-widget-content a {
+   color: #CCCCCC;
+}
+#planning .event_past.event_todo .ui-widget-content,
+#planning .event_past.event_todo .ui-widget-content a {
+   color: #FF0000;
+}
+
+#planning .event_today.event_todo .ui-widget-content,
+#planning .event_today.event_todo .ui-widget-content a {
+   color: #FFA100;
+}
+
+
 #planning .fc-event {
    font-weight: normal;
 }
@@ -1764,6 +1786,17 @@ a.icon_nav_move:hover img {
    bottom: 0;
    top: 0;
    right: 0;
+}
+
+#planning .fc-list-item-title .event_type {
+   height: 12px;
+   width: 6px;
+   margin-right: 3px;
+   display: inline-block
+}
+
+#planning .event_past .fc-list-item-title .event_type {
+   opacity: .5;
 }
 
 #planning .planning-select-helper {
@@ -1908,18 +1941,50 @@ a.icon_nav_move:hover img {
 }
 
 /* ################--------------- box (redirect and other)  ---------------#################### */
-.message_after_redirect {
+.ui-widget-content.message_after_redirect {
    font-family:"Myriad Pro","Myriad Web","Tahoma","Helvetica","Arial",sans-serif;
    color:#393939;
-   font-size: 11px !important;
-   background: none !important;
-   background-color: #CDE4CB !important;
+   font-size: 11px;
+   background: #CDE4CB;
 }
 
 .message_after_redirect h3 {
    font-size:11px;
    font-weight:bold;
    zoom:1;
+}
+
+/* ##### ERROR messages ##### */
+.ui-widget-content.message_after_redirect.err_msg {
+   background-color: #ff9999;
+}
+
+.message_after_redirect.err_msg div.ui-widget-header {
+   color: white;
+   background: rgba(255, 0, 0, .8);
+   border-color: rgba(255, 0, 0, 0.8);
+}
+
+/* ##### WARNING messages ##### */
+.ui-widget-content.message_after_redirect.warn_msg {
+   background-color: #ffdb99;
+}
+
+.message_after_redirect.warn_msg div.ui-widget-header {
+   color: white;
+   background: rgba(255, 165, 0, .8);
+   border-color: rgba(255, 165, 0, 0.8);
+}
+
+/* ##### INFO messages ##### */
+.ui-widget-content.message_after_redirect.info_msg {
+   background-color: #a3abc0;
+}
+
+.message_after_redirect.info_msg div.ui-widget-header {
+   color: white;
+   background: rgba(27, 47, 98, .8);
+   border-color: rgba(27, 47, 98, 0.8);
 }
 
 /* ################--------------- Login Null Header  ---------------#################### */
@@ -2442,7 +2507,8 @@ ul#menu ul.ssmenu {
    font-size: 11px;
    text-align: left;
    min-width: 150px;
-   column-count: 2;
+   column-count: 3;
+   -moz-column-count:3;
 }
 
 #show_all_menu .all_menu_block {
@@ -2487,7 +2553,7 @@ ul#menu ul.ssmenu {
    padding: 5px;
 }
 
-.copyright {
+a.copyright {
    font-size: 9px;
    color :#000;
 }
@@ -2810,7 +2876,6 @@ ul#menu ul.ssmenu {
    width: 100%;
    text-align: center;
    margin-top: 5px;
-   white-space: nowrap;
 }
 
 .timeline_history .h_user a:hover {

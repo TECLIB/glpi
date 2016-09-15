@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -37,11 +37,16 @@
 
 // Current version of GLPI
 define("GLPI_VERSION","9.1");
+define('GLPI_YEAR', '2016');
 define("GLPI_DEMO_MODE","0");
 
 define("GLPI_USE_CSRF_CHECK", "1");
 define("GLPI_CSRF_EXPIRES","7200");
 define("GLPI_CSRF_MAX_TOKENS","100");
+
+// for compatibility with mysql 5.7
+// TODO: this var need to be set to 0 after review of all sql queries)
+define("GLPI_FORCE_EMPTY_SQL_MODE","1");
 
 // rights
 define("READ",        1);

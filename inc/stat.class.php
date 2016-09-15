@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -600,7 +600,9 @@ class Stat extends CommonGLPI {
                }
                if ($nb_answersatisfaction > 0) {
                   $avgsatisfaction = round(array_sum($satisfaction)/$nb_answersatisfaction,1);
-                  $avgsatisfaction = TicketSatisfaction::displaySatisfaction($avgsatisfaction);
+                  if ($output_type == Search::HTML_OUTPUT) {
+                     $avgsatisfaction = TicketSatisfaction::displaySatisfaction($avgsatisfaction);
+                  }
                } else {
                   $avgsatisfaction = '&nbsp;';
                }

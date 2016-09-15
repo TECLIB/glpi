@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -763,6 +763,7 @@ abstract class CommonITILTask  extends CommonDBTM {
     *    - end Date
     *    - color
     *    - event_type_color
+    *    - display_done_events (boolean)
     *
     * @return array of planning item
    **/
@@ -790,6 +791,10 @@ abstract class CommonITILTask  extends CommonDBTM {
 
       if (!isset($options['event_type_color'])) {
          $options['event_type_color'] = '';
+      }
+
+      if (!isset($options['display_done_events'])) {
+         $options['display_done_events'] = true;
       }
 
       $who       = $options['who'];
@@ -846,6 +851,11 @@ abstract class CommonITILTask  extends CommonDBTM {
                      AND ";
       }
 
+      $DONE_EVENTS = '';
+      if (!$options['display_done_events']) {
+         $DONE_EVENTS = "`".$item->getTable()."`.`state` != ".Planning::DONE." AND";
+      }
+
       $addrestrict = '';
       if ($parentitem->maybeDeleted()) {
          $addrestrict = 'AND NOT `'.$parentitem->getTable().'`.`is_deleted`';
@@ -856,6 +866,7 @@ abstract class CommonITILTask  extends CommonDBTM {
                 INNER JOIN `".$parentitem->getTable()."`
                   ON (`".$parentitem->getTable()."`.`id` = `".$item->getTable()."`.`".$parentitem->getForeignKeyField()."`)
                 WHERE $ASSIGN
+                      $DONE_EVENTS
                       '$begin' < `".$item->getTable()."`.`end`
                       AND '$end' > `".$item->getTable()."`.`begin`
                       $addrestrict
@@ -1326,7 +1337,6 @@ abstract class CommonITILTask  extends CommonDBTM {
       echo "<td colspan='2'>";
       echo Html::image($CFG_GLPI['root_doc']."/pics/user.png")."&nbsp;";
       echo _n('User', 'Users', 1);
-      echo " <a href='#' onClick=\"".Html::jsGetElementbyID('planningcheck'.$rand).".dialog('open');\">";
       $rand_user          = mt_rand();
       $params             = array('name'   => "users_id_tech",
                                   'value'  => (($ID > -1)
@@ -1343,6 +1353,7 @@ abstract class CommonITILTask  extends CommonDBTM {
                                   'url'       => $CFG_GLPI["root_doc"]."/ajax/planningcheck.php");
       User::dropdown($params);
 
+      echo " <a href='#' onClick=\"".Html::jsGetElementbyID('planningcheck'.$rand).".dialog('open');\">";
       echo "&nbsp;<img src='".$CFG_GLPI["root_doc"]."/pics/reservation-3.png'
              title=\"".__s('Availability')."\" alt=\"".__s('Availability')."\"
              class='calendrier'>";

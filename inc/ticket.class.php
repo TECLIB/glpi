@@ -1292,8 +1292,9 @@ class Ticket extends CommonITILObject {
          // Setting a solution type means the ticket is solved
          if ((in_array("solutiontypes_id", $this->updates)
               || in_array("solution", $this->updates))
-             && (in_array($this->input["status"], $this->getSolvedStatusArray())
-                 || in_array($this->input["status"], $this->getClosedStatusArray()))) { // auto close case
+             && (isset($this->input["status"])
+                 && (in_array($this->input["status"], $this->getSolvedStatusArray())
+                     || in_array($this->input["status"], $this->getClosedStatusArray())))) { // auto close case
             Ticket_Ticket::manageLinkedTicketsOnSolved($this->fields['id']);
          }
 
@@ -2255,6 +2256,35 @@ class Ticket extends CommonITILObject {
       $tab                          = array();
 
       $tab += $this->getSearchOptionsMain();
+
+      $tab[155]['table']               = $this->getTable();
+      $tab[155]['field']               = 'time_to_own';
+      $tab[155]['name']                = __('Time to own');
+      $tab[155]['datatype']            = 'datetime';
+      $tab[155]['maybefuture']         = true;
+      $tab[155]['massiveaction']       = false;
+      $tab[155]['additionalfields']    = array('status');
+
+      $tab[158]['table']              = $this->getTable();
+      $tab[158]['field']              = 'time_to_own';
+      $tab[158]['name']               = __('Time to own + Progress');
+      $tab[158]['massiveaction']      = false;
+      $tab[158]['nosearch']           = true;
+      $tab[158]['additionalfields']   = array('status');
+
+      $tab[159]['table']              = $this->getTable();
+      $tab[159]['field']              = 'is_late';
+      $tab[159]['name']               = __('Time to own exceedeed');
+      $tab[159]['datatype']           = 'bool';
+      $tab[159]['massiveaction']      = false;
+      $tab[159]['computation']        = "IF(TABLE.`time_to_own` IS NOT NULL
+                                            AND TABLE.`status` <> ".self::WAITING."
+                                            AND (TABLE.`takeintoaccount_delay_stat`
+                                                        > TIME_TO_SEC(TIMEDIFF(TABLE.`time_to_own`,
+                                                                               TABLE.`date`))
+                                                 OR (TABLE.`takeintoaccount_delay_stat` = 0
+                                                      AND TABLE.`time_to_own` < NOW())),
+                                            1, 0)";
 
       $tab[14]['table']             = $this->getTable();
       $tab[14]['field']             = 'type';
@@ -4154,8 +4184,7 @@ class Ticket extends CommonITILObject {
       echo "<td>";
       $idajax = 'change_priority_' . mt_rand();
 
-      if ($canupdate
-          && $canpriority
+      if ($canpriority
           && !$tt->isHiddenField('priority')) {
          $idpriority = parent::dropdownPriority(array('value'     => $this->fields["priority"],
                                                       'withmajor' => true));
@@ -6602,14 +6631,6 @@ class Ticket extends CommonITILObject {
                       LEFT JOIN `glpi_groups_users` gu ON gu.`groups_id` = gt.`groups_id`
                       LEFT JOIN `glpi_users` usr ON gu.`users_id` = usr.`id`
                       WHERE gt.`tickets_id` = ".$this->getId()."
-                      UNION
-                      SELECT usr.`id` AS users_id, '2' AS type
-                      FROM `glpi_profiles` prof
-                      LEFT JOIN `glpi_profiles_users` pu ON pu.`profiles_id` = prof.`id`
-                      LEFT JOIN `glpi_users` usr ON usr.`id` = pu.`users_id`
-                      LEFT JOIN `glpi_profilerights` pr ON pr.`profiles_id` = prof.`id`
-                      WHERE pr.`name` = 'ticket'
-                            AND pr.`rights` & ".Ticket::OWN." = ".Ticket::OWN."
                      ) AS allactors
                 WHERE `type` != ".CommonItilActor::OBSERVER."
                 GROUP BY `users_id`

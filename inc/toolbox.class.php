@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -941,26 +941,6 @@ class Toolbox {
       }
       echo "</tr>";
 
-      // Test for sybase extension loaded or not.
-      echo "<tr class='tab_bg_1'>";
-      echo "<td class='left b'>".__('magic_quotes_sybase extension test')."</td>";
-
-      if (ini_get('magic_quotes_sybase')) {
-         echo "<td class='red'>";
-         echo "<img src='".$CFG_GLPI['root_doc']."/pics/ko_min.png'>".
-               __('GLPI does not work with the magic_quotes_sybase option. Please turn it off and retry').
-               "</td>";
-         $error = 2;
-
-      } else {
-         echo "<td><img src='".$CFG_GLPI['root_doc']."/pics/ok_min.png' alt=\"".
-              __s("The magic_quotes_sybase option isn't active on your server - Perfect!").
-              "\" title=\"".
-              __s("The magic_quotes_sybase option isn't active on your server - Perfect!").
-              "\"></td>";
-      }
-      echo "</tr>";
-
       // Test for ctype extension loaded or not (forhtmlawed)
       echo "<tr class='tab_bg_1'><td class='left b'>".__('Test ctype functions')."</td>";
 
@@ -1026,9 +1006,9 @@ class Toolbox {
       echo "<tr class='tab_bg_1'><td class='left b'>".__('GD extension test')."</td>";
 
       if (!extension_loaded('gd')) {
-         echo "<td><img src='".$CFG_GLPI['root_doc']."/pics/ko_min.png'>".
+         echo "<td><img src='".$CFG_GLPI['root_doc']."/pics/warning_min.png'>".
                      __('GD extension of your parser PHP is not installed')."></td>";
-         $error = 2;
+         $error = 1;
 
       } else {
          echo "<td><img src='".$CFG_GLPI['root_doc']."/pics/ok_min.png' alt=\"".
@@ -1037,7 +1017,7 @@ class Toolbox {
       }
       echo "</tr>";
 
-      // Test for GD extension.
+      // Test for zlib extension.
       echo "<tr class='tab_bg_1'><td class='left b'>".__('Zlib extension test')."</td>";
 
       if (!extension_loaded('zlib')) {
@@ -2547,7 +2527,7 @@ class Toolbox {
     *
     * @param mixed $needle
     * @param array $haystack
-    * @param bool  $strict: If strict is set to TRUE then it will also 
+    * @param bool  $strict: If strict is set to TRUE then it will also
     *              check the types of the needle in the haystack.
     * @return bool
     */

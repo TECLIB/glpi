@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2016 Teclib'.
 
  http://glpi-project.org
 
@@ -32,7 +32,7 @@
  */
 
 /** @file
-* @brief
+* @since version 9.1
 */
 
 abstract class API extends CommonGLPI {
@@ -130,17 +130,16 @@ abstract class API extends CommonGLPI {
    /**
     * Init GLPI Session
     *
-    * @since version 9.1
-    *
-    * @param    $params   array with theses options :
+    * @param $params   array with theses options :
     *    - a couple 'name' & 'password' : 2 parameters to login with user auhentication
     *         OR
     *    - an 'user_token' defined in User Configuration
     *
     * @return array with session_token
-    */
-   protected function initSession($params = array()) {
+   **/
+   protected function initSession($params=array()) {
       global $CFG_GLPI;
+
       $this->checkAppToken();
       $this->logEndpointUsage(__FUNCTION__);
 
@@ -194,11 +193,10 @@ abstract class API extends CommonGLPI {
     * Kill GLPI Session
     * Use 'session_token' param in $this->parameters
     *
-    * @since version 9.1
-    *
     * @return boolean
-    */
+   **/
    protected function killSession() {
+
       $this->initEndpoint(false, __FUNCTION__);
       return Session::destroy();
    }
@@ -207,10 +205,9 @@ abstract class API extends CommonGLPI {
    /**
     * Retrieve GLPI Session initialised by initSession function
     * Use 'session_token' param in $this->parameters
-    *
-    * @since version 9.1
-    */
+   **/
    protected function retrieveSession() {
+
       if (isset($this->parameters['session_token'])
           && !empty($this->parameters['session_token'])) {
          $current = session_id();
@@ -244,14 +241,14 @@ abstract class API extends CommonGLPI {
    /**
     * Change active entity to the entities_id one.
     *
-    * @since version 9.1
-    *
-    * @param    $params   array with theses options :
+    * @param $params   array with theses options :
     *   - 'entities_id': (default 'all') ID of the new active entity ("all" = load all possible entities). Optionnal
     *   - 'is_recursive': (default false) Also display sub entities of the active entity.  Optionnal
+    *
     * @return bool
-    */
-   protected function changeActiveEntities($params = array()) {
+   **/
+   protected function changeActiveEntities($params=array()) {
+
       $this->initEndpoint();
 
       if (!isset($params['entities_id'])) {
@@ -270,54 +267,56 @@ abstract class API extends CommonGLPI {
    /**
     * return all the possible entity of the current logged user (and for current active profile)
     *
-    * @since version 9.1
-    *
     * @return array of entities (with id and name)
-    */
+   **/
    protected function getMyEntities() {
+
       $this->initEndpoint();
 
       $myentities = array();
       foreach ($_SESSION['glpiactiveprofile']['entities'] as $entity) {
-         $myentities[$entity['id']] = array('id' => $entity['id'],
+         $myentities[$entity['id']] = array('id'   => $entity['id'],
                                             'name' => Dropdown::getDropdownName("glpi_entities",
                                                                                 $entity['id']));
       }
-
       return $myentities;
    }
+
+
 
 
    /**
     * return active entities of current logged user
     *
-    * @since version 9.1
-    *
     * @return array with 3 keys :
     *  - active_entity : current set entity
     *  - active_entity_recursive : boolean, if we see sons of this entity
     *  - active_entities : array all active entities (active_entity and its sons)
-    */
+   **/
    protected function getActiveEntities() {
+
       $this->initEndpoint();
 
-      return array("active_entity"           => $_SESSION['glpiactive_entity'],
-                   "active_entity_recursive" => $_SESSION['glpiactive_entity_recursive'],
-                   "active_entities"         => $_SESSION['glpiactiveentities']);
+      return array("active_entity" => array(
+                     "id"                      => $_SESSION['glpiactive_entity'],
+                     "active_entity_recursive" => $_SESSION['glpiactive_entity_recursive'],
+                     "active_entities"         => array_values($_SESSION['glpiactiveentities'])));
 
    }
+
+
 
 
    /**
     * set a profile to active
     *
-    * @since version 9.1
-    *
     * @param $params with theses options :
     *    - profiles_id : identifier of profile to set
+    *
     * @return     boolean
-    */
-   protected function changeActiveProfile($params = array()) {
+   **/
+   protected function changeActiveProfile($params=array()) {
+
       $this->initEndpoint();
 
       $profiles_id = intval($params['profiles_id']);
@@ -327,78 +326,95 @@ abstract class API extends CommonGLPI {
    }
 
 
+
+
    /**
     * Return all the profiles associated to logged user
     *
-    * @since version 9.1
-    *
     * @return array of profiles (with associated rights)
-    */
+   **/
    protected function getMyProfiles() {
+
       $this->initEndpoint();
 
-      return $_SESSION['glpiprofiles'];
+      $myprofiles = array();
+      foreach($_SESSION['glpiprofiles'] as $profiles_id => $profile) {
+         // append if of the profile into values 
+         $profile = ['id' => $profiles_id] + $profile;
+
+         // don't keep keys for entities
+         $profile['entities'] = array_values($profile['entities']);
+
+         // don't keep keys for profiles
+         $myprofiles[] = $profile;
+      }
+      return array('myprofiles' => $myprofiles);
    }
+
+
 
 
    /**
     * return the current active profile
     *
-    * @since version 9.1
-    *
     * @return integer the profiles_id
-    */
+   **/
    protected function getActiveProfile() {
+
       $this->initEndpoint();
       return $_SESSION['glpiactiveprofile'];
    }
 
 
+
+
    /**
     *  return the current php $_SESSION
     *
-    * @since version 9.1
-    *
     * @return array
-    */
+   **/
    protected function getFullSession() {
+
       $this->initEndpoint();
       return $_SESSION;
    }
 
+
+
    /**
     * Return the instance fields of itemtype identified by id
     *
-    * @since version 9.1
-    *
-    * @param      string   $itemtype  itemtype (class) of object
-    * @param      integer  $id        identifier of object
-    * @param      array   $params   array with theses options :
-    *    - 'expand_dropdowns' : show dropdown's names instead of id. default: false. Optionnal
-    *    - 'get_hateoas' :      show relation of current item in a links attribute. default: true. Optionnal
-    *    - 'with_components' :  Only for [Computer, NetworkEquipment, Peripheral, Phone, Printer], Optionnal.
-    *    - 'with_disks' :       Only for Computer, retrieve the associated filesystems. Optionnal.
-    *    - 'with_softwares' :   Only for Computer, retrieve the associated softwares installations. Optionnal.
-    *    - 'with_connections' : Only for Computer, retrieve the associated direct connections (like peripherals and printers) .Optionnal.
-    *    - 'with_networkports' :Retrieve all network connections and advanced network informations. Optionnal.
-    *    - 'with_infocoms' :    Retrieve financial and administrative informations. Optionnal.
-    *    - 'with_contracts' :   Retrieve associated contracts. Optionnal.
-    *    - 'with_documents' :   Retrieve associated external documents. Optionnal.
-    *    - 'with_tickets' :     Retrieve associated itil tickets. Optionnal.
-    *    - 'with_problems' :    Retrieve associated itil problems. Optionnal.
-    *    - 'with_changes' :     Retrieve associated itil changes. Optionnal.
-    *    - 'with_notes' :       Retrieve Notes (if exists, not all itemtypes have notes). Optionnal.
-    *    - 'with_logs' :        Retrieve historical. Optionnal.
+    * @param $itemtype    string  itemtype (class) of object
+    * @param $id          integer identifier of object
+    * @param $params      array   with theses options :
+    *    - 'expand_dropdowns': Show dropdown's names instead of id. default: false. Optionnal
+    *    - 'get_hateoas':      Show relation of current item in a links attribute. default: true. Optionnal
+    *    - 'get_sha1':         Get a sha1 signature instead of the full answer. default: false. Optionnal
+    *    - 'with_components':  Only for [Computer, NetworkEquipment, Peripheral, Phone, Printer], Optionnal.
+    *    - 'with_disks':       Only for Computer, retrieve the associated filesystems. Optionnal.
+    *    - 'with_softwares':   Only for Computer, retrieve the associated softwares installations. Optionnal.
+    *    - 'with_connections': Only for Computer, retrieve the associated direct connections (like peripherals and printers) .Optionnal.
+    *    - 'with_networkports':Retrieve all network connections and advanced network informations. Optionnal.
+    *    - 'with_infocoms':    Retrieve financial and administrative informations. Optionnal.
+    *    - 'with_contracts':   Retrieve associated contracts. Optionnal.
+    *    - 'with_documents':   Retrieve associated external documents. Optionnal.
+    *    - 'with_tickets':     Retrieve associated itil tickets. Optionnal.
+    *    - 'with_problems':    Retrieve associated itil problems. Optionnal.
+    *    - 'with_changes':     Retrieve associated itil changes. Optionnal.
+    *    - 'with_notes':       Retrieve Notes (if exists, not all itemtypes have notes). Optionnal.
+    *    - 'with_logs':        Retrieve historical. Optionnal.
     *
     * @return     array    fields of found object
-    */
-   protected function getItem($itemtype, $id, $params = array()) {
+   **/
+   protected function getItem($itemtype, $id, $params=array()) {
       global $CFG_GLPI, $DB;
+
       $this->initEndpoint();
 
       // default params
       $default = array('expand_dropdowns'  => false,
                        'get_hateoas'       => true,
+                       'get_sha1'          => false,
                        'with_components'   => false,
                        'with_disks'        => false,
                        'with_softwares'    => false,
@@ -426,8 +442,8 @@ abstract class API extends CommonGLPI {
 
       // retrieve devices
       if (isset($params['with_devices'])
-         && $params['with_devices']
-         && in_array($itemtype, Item_Devices::getConcernedItems())) {
+          && $params['with_devices']
+          && in_array($itemtype, Item_Devices::getConcernedItems())) {
          $all_devices = array();
          foreach (Item_Devices::getItemAffinities($item->getType()) as $device_type) {
             $found_devices = getAllDatasFromTable($device_type::getTable(),
@@ -451,8 +467,8 @@ abstract class API extends CommonGLPI {
 
       // retrieve computer disks
       if (isset($params['with_disks'])
-         && $params['with_disks']
-         && $itemtype == "Computer") {
+          && $params['with_disks']
+          && $itemtype == "Computer") {
          // build query to retrive filesystems
          $query = "SELECT `glpi_filesystems`.`name` AS fsname,
                           `glpi_computerdisks`.*
@@ -461,6 +477,7 @@ abstract class API extends CommonGLPI {
                              ON (`glpi_computerdisks`.`filesystems_id` = `glpi_filesystems`.`id`)
                    WHERE `computers_id` = '$id'
                          AND `is_deleted` = '0'";
+         $fields['_disks'] = array();
          if ($result = $DB->query($query)) {
             while ($data = $DB->fetch_assoc($result)) {
                unset($data['computers_id']);
@@ -472,8 +489,8 @@ abstract class API extends CommonGLPI {
 
       // retrieve computer softwares
       if (isset($params['with_softwares'])
-         && $params['with_softwares']
-         && $itemtype == "Computer") {
+          && $params['with_softwares']
+          && $itemtype == "Computer") {
          $fields['_softwares'] = array();
          if (!Software::canView()) {
             $fields['_softwares'] = self::arrayRightError();
@@ -504,8 +521,8 @@ abstract class API extends CommonGLPI {
 
       // retrieve item connections
       if (isset($params['with_connections'])
-         && $params['with_connections']
-         && $itemtype == "Computer") {
+          && $params['with_connections']
+          && $itemtype == "Computer") {
          $fields['_connections'] = array();
          foreach ($CFG_GLPI["directconnect_types"] as $connect_type) {
             $connect_item = new $connect_type();
@@ -532,11 +549,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item networkports
       if (isset($params['with_networkports'])
-         && $params['with_networkports']) {
+          && $params['with_networkports']) {
          $fields['_networkports'] = array();
          if (!NetworkEquipment::canView()) {
             $fields['_networkports'] = self::arrayRightError();
@@ -567,11 +582,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item infocoms
       if (isset($params['with_infocoms'])
-         && $params['with_infocoms']) {
+          && $params['with_infocoms']) {
          $fields['_infocoms'] = array();
          if (!Infocom::canView()) {
             $fields['_infocoms'] = self::arrayRightError();
@@ -583,10 +596,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
       // retrieve item contracts
       if (isset($params['with_contracts'])
-         && $params['with_contracts']) {
+          && $params['with_contracts']) {
          $fields['_contracts'] = array();
          if (!Contract::canView()) {
             $fields['_contracts'] = self::arrayRightError();
@@ -612,7 +624,7 @@ abstract class API extends CommonGLPI {
 
       // retrieve item contracts
       if (isset($params['with_documents'])
-         && $params['with_documents']) {
+          && $params['with_documents']) {
          $fields['_documents'] = array();
          if (!$itemtype != 'Ticket'
              && $itemtype != 'KnowbaseItem'
@@ -642,11 +654,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item tickets
       if (isset($params['with_tickets'])
-         && $params['with_tickets']) {
+          && $params['with_tickets']) {
          $fields['_tickets'] = array();
          if (!Ticket::canView()) {
             $fields['_tickets'] = self::arrayRightError();
@@ -666,11 +676,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item problems
       if (isset($params['with_problems'])
-         && $params['with_problems']) {
+          && $params['with_problems']) {
          $fields['_problems'] = array();
          if (!Problem::canView()) {
             $fields['_problems'] = self::arrayRightError();
@@ -692,11 +700,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item changes
       if (isset($params['with_changes'])
-         && $params['with_changes']) {
+          && $params['with_changes']) {
          $fields['_changes'] = array();
          if (!Change::canView()) {
             $fields['_changes'] = self::arrayRightError();
@@ -718,11 +724,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item notes
       if (isset($params['with_notes'])
-         && $params['with_notes']) {
+          && $params['with_notes']) {
          $fields['_notes'] = array();
          if (!Session::haveRight($itemtype::$rightname, READNOTE)) {
             $fields['_notes'] = self::arrayRightError();
@@ -731,11 +735,9 @@ abstract class API extends CommonGLPI {
          }
       }
 
-
-
       // retrieve item logs
       if (isset($params['with_logs'])
-         && $params['with_logs']) {
+          && $params['with_logs']) {
          $fields['_logs'] = array();
          if (!Session::haveRight($itemtype::$rightname, READNOTE)) {
             $fields['_logs'] = self::arrayRightError();
@@ -749,45 +751,58 @@ abstract class API extends CommonGLPI {
       // expand dropdown (retrieve name of dropdowns) and get hateoas from foreign keys
       $fields = self::parseDropdowns($fields, $params);
 
-
       // get hateoas from children
       if ($params['get_hateoas']) {
          $hclasses = self::getHatoasClasses($itemtype);
          foreach($hclasses as $hclass) {
-            $fields['links'][] = array('rel' => $hclass,
+            $fields['links'][] = array('rel'  => $hclass,
                                        'href' => self::$api_url."/$itemtype/".$item->getID()."/$hclass/");
          }
+      }
+
+      // get sha1 footprint if needed
+      if ($params['get_sha1']) {
+         $fields = sha1(json_encode($fields, JSON_UNESCAPED_UNICODE
+                                             | JSON_UNESCAPED_SLASHES
+                                             | JSON_NUMERIC_CHECK));
       }
 
       return $fields;
    }
 
+
+
    /**
     * Fill a sub array with a right error
-    */
+   **/
    protected function arrayRightError() {
+
       return array('error'   => 401,
                    'message' => __("You don't have permission to perform this action."));
    }
 
 
 
+
+
    /**
     * Return a collection of rows of the desired itemtype
     *
-    * @since version 9.1
-    *
-    * @param      string  $itemtype  itemtype (class) of object
-    * @param      array   $params   array with theses options :
+    * @param $itemtype     string    itemtype (class) of object
+    * @param $params       array     with theses options :
     * - 'expand_dropdowns' (default: false): show dropdown's names instead of id. Optionnal
     * - 'get_hateoas'      (default: true): show relations of items in a links attribute. Optionnal
     * - 'only_id'          (default: false): keep only id in fields list. Optionnal
     * - 'range'            (default: 0-50): limit the list to start-end attributes
+    * @param $totalcount   integer  output parameter who receive the total count of the query resulat.
+    *                               As this function paginate results (with a mysql LIMIT),
+    *                               we can have the full range. (default 0)
     *
     * @return     array collection of fields
-    */
-   protected function getItems($itemtype, $params = array()) {
+   **/
+   protected function getItems($itemtype, $params = array(), &$totalcount=0) {
       global $DB;
+
       $this->initEndpoint();
 
       // default params
@@ -814,7 +829,7 @@ abstract class API extends CommonGLPI {
          if (preg_match("/^[0-9]+-[0-9]+\$/", $params['range'])) {
             $range = explode("-", $params['range']);
             $params['start']      = $range[0];
-            $params['list_limit'] = $range[1]-$range[0];
+            $params['list_limit'] = $range[1]-$range[0]+1;
          } else {
             $this->returnError("range must be in format : [start-end] with integers");
          }
@@ -871,14 +886,22 @@ abstract class API extends CommonGLPI {
 
       // filter with entity
       if ($item->isEntityAssign()) {
-         $where.= getEntitiesRestrictRequest(" AND",
+         $where.= "AND (". getEntitiesRestrictRequest("",
                                              $itemtype::getTable(),
                                              '',
-                                             $_SESSION['glpiactiveentities']);
+                                             $_SESSION['glpiactiveentities'],
+                                             false,
+                                             true);
+
+         if ($item instanceof Bookmark) {
+            $where.= " OR ".$itemtype::getTable().".entities_id = -1";
+         }
+
+         $where.= ")";
       }
 
       // build query
-      $query = "SELECT DISTINCT `$table`.id,  `$table`.*
+      $query = "SELECT SQL_CALC_FOUND_ROWS DISTINCT `$table`.id,  `$table`.*
                 FROM `$table`
                 $join
                 WHERE $where
@@ -890,6 +913,11 @@ abstract class API extends CommonGLPI {
          }
       }
 
+      // get result full row counts
+      $query_numtotalrow = "Select FOUND_ROWS()";
+      $result_numtotalrow = $DB->query($query_numtotalrow);
+      $data_numtotalrow = $DB->fetch_assoc($result_numtotalrow);
+      $totalcount = $data_numtotalrow['FOUND_ROWS()'];
 
       foreach ($found as $key => &$fields) {
          // only keep id in field list
@@ -915,15 +943,66 @@ abstract class API extends CommonGLPI {
 
 
    /**
+    * Return a collection of items queried in input ($items)
+    *
+    * Call self::getItem for each line of $items
+    *
+    * @param $params     array with theses options :
+    *    - items:               array containing lines with itemtype and items_id keys
+    *                               Ex: [
+    *                                      [itemtype => 'Ticket', id => 102],
+    *                                      [itemtype => 'User',   id => 10],
+    *                                      [itemtype => 'User',   id => 11],
+    *                                   ]
+    *    - 'expand_dropdowns':  Show dropdown's names instead of id. default: false. Optionnal
+    *    - 'get_hateoas':       Show relation of current item in a links attribute. default: true. Optionnal
+    *    - 'get_sha1':          Get a sha1 signature instead of the full answer. default: false. Optionnal
+    *    - 'with_components':   Only for [Computer, NetworkEquipment, Peripheral, Phone, Printer], Optionnal.
+    *    - 'with_disks':        Only for Computer, retrieve the associated filesystems. Optionnal.
+    *    - 'with_softwares':    Only for Computer, retrieve the associated softwares installations. Optionnal.
+    *    - 'with_connections':  Only for Computer, retrieve the associated direct connections (like peripherals and printers) .Optionnal.
+    *    - 'with_networkports': Retrieve all network connections and advanced network informations. Optionnal.
+    *    - 'with_infocoms':     Retrieve financial and administrative informations. Optionnal.
+    *    - 'with_contracts':    Retrieve associated contracts. Optionnal.
+    *    - 'with_documents':    Retrieve associated external documents. Optionnal.
+    *    - 'with_tickets':      Retrieve associated itil tickets. Optionnal.
+    *    - 'with_problems':     Retrieve associated itil problems. Optionnal.
+    *    - 'with_changes':      Retrieve associated itil changes. Optionnal.
+    *    - 'with_notes':        Retrieve Notes (if exists, not all itemtypes have notes). Optionnal.
+    *    - 'with_logs':         Retrieve historical. Optionnal.
+    *
+    * @return     array    collection of glpi object's fields
+   **/
+   protected function getMultipleItems($params=array()) {
+
+      if (!is_array($params['items'])) {
+         return $this->messageBadArrayError();
+      }
+
+      $allitems = [];
+      foreach($params['items'] as $item) {
+         if (!isset($item['items_id']) && !isset($item['itemtype'])) {
+            return $this->messageBadArrayError();
+         }
+
+         $fields = $this->getItem($item['itemtype'], $item['items_id'], $params);
+         $allitems[] = $fields;
+      }
+
+      return $allitems;
+   }
+
+
+   /**
     * List the searchoptions of provided itemtype. To use with searchItems function
     *
-    * @since version 9.1
-    *
-    * @param      string  $itemtype  itemtype (class) of object
+    * @param $itemtype     string    itemtype (class) of object
+    * @param $params       array
     *
     * @return     array    all searchoptions of specified itemtype
-    */
+   **/
    protected function listSearchOptions($itemtype, $params= array()) {
+
       $this->initEndpoint();
       $soptions = Search::getOptions($itemtype);
 
@@ -962,19 +1041,21 @@ abstract class API extends CommonGLPI {
     *
     * It permits to identify a searchoption with an named index instead a numeric one
     *
-    * @param  CommonDBTM $itemtype current itemtype called on ressource listSearchOption
-    * @param  array $option        current option to generate an unique id
+    * @param $itemtype       CommonDBTM  current itemtype called on ressource listSearchOption
+    * @param $option    array         current option to generate an unique id
+    *
     * @return string               the unique id
-    */
-   private function getSearchOptionUniqID($itemtype, $option) {
+   **/
+   private function getSearchOptionUniqID($itemtype, $option=array()) {
+
       $uid_parts = array($itemtype);
 
       $sub_itemtype = getItemTypeForTable($option['table']);
 
       if ((isset($option['joinparams']['beforejoin']['table'])
-          || empty($option['joinparams']))
-             && $option['linkfield'] != getForeignKeyFieldForItemType($sub_itemtype)
-             && $option['linkfield'] != $option['field']) {
+           || empty($option['joinparams']))
+          && $option['linkfield'] != getForeignKeyFieldForItemType($sub_itemtype)
+          && $option['linkfield'] != $option['field']) {
          $uid_parts[] = $option['linkfield'];
       }
 
@@ -997,12 +1078,16 @@ abstract class API extends CommonGLPI {
       return $uuid;
    }
 
+
    /**
     * Generate subpart of a unique id of a search option with parsing joinparams recursively
-    * @param  array $option ['joinparams']['beforejoin'] subpart of a searchoption
+    *
+    * @param $option    array  ['joinparams']['beforejoin'] subpart of a searchoption
+    *
     * @return array         unique id parts
-    */
+   **/
    private function getSearchOptionUniqIDJoins($option) {
+
       $uid_parts = array();
       if (isset($option['joinparams']['beforejoin'])) {
          $sub_parts  = $this->getSearchOptionUniqIDJoins($option['joinparams']['beforejoin']);
@@ -1017,14 +1102,11 @@ abstract class API extends CommonGLPI {
    }
 
 
-
    /**
     * Expose the GLPI searchEngine
     *
-    * @since version 9.1
-    *
-    * @param      string  $itemtype  itemtype (class) of object
-    * @param      array   $params   array with theses options :
+    * @param $itemtype     string    itemtype (class) of object
+    * @param $params       array     with theses options :
     *    - 'criteria': array of criterion object to filter search.
     *        Optionnal.
     *        Each criterion object must provide :
@@ -1053,8 +1135,9 @@ abstract class API extends CommonGLPI {
     *
     * @return     Array   of raw rows from Search class
     */
-   protected function searchItems($itemtype, $params = array()) {
+   protected function searchItems($itemtype, $params=array()) {
       global $DEBUG_SQL;
+
       $this->initEndpoint();
 
       // check rights
@@ -1081,7 +1164,7 @@ abstract class API extends CommonGLPI {
          if (preg_match("/^[0-9]+-[0-9]+\$/", $params['range'])) {
             $range = explode("-", $params['range']);
             $params['start']      = $range[0];
-            $params['list_limit'] = $range[1]-$range[0];
+            $params['list_limit'] = $range[1]-$range[0]+1;
             $params['range']      = $range;
          } else {
             $this->returnError("range must be in format : [start-end] with integers");
@@ -1105,19 +1188,16 @@ abstract class API extends CommonGLPI {
                             500, "ERROR_SQL", false);
       }
 
-
       $cleaned_data = array('totalcount' => $rawdata['data']['totalcount'],
                             'count'      => count($rawdata['data']['rows']),
                             'sort'       => $rawdata['search']['sort'],
-                            'order'      => $rawdata['search']['order']
-      );
+                            'order'      => $rawdata['search']['order']);
 
       if ($params['range'][0] > $cleaned_data['totalcount']) {
-         $this->returnError("Provided range exceed total count of data : ".$cleaned_data['totalcount'],
+         $this->returnError("Provided range exceed total count of data: ".$cleaned_data['totalcount'],
                             400,
                             "ERROR_RANGE_EXCEED_TOTAL");
       }
-
 
       //prepare cols (searchoptions_id) for cleaned data
       $cleaned_cols = array();
@@ -1139,6 +1219,7 @@ abstract class API extends CommonGLPI {
 
          // keep row itemtype for all asset
          if ($itemtype == 'AllAssets' ) {
+            $current_id       = $raw['id'];
             $current_itemtype = $raw['TYPE'];
          }
 
@@ -1171,6 +1252,7 @@ abstract class API extends CommonGLPI {
 
          // if all asset, provide type in returned data
          if ($itemtype == 'AllAssets') {
+            $current_line['id']       = $current_id;
             $current_line['itemtype'] = $current_itemtype;
          }
 
@@ -1208,7 +1290,7 @@ abstract class API extends CommonGLPI {
       }
 
       $cleaned_data['content-range'] = implode('-', $params['range']).
-                                       "/".$cleaned_data['count'];
+                                       "/".$cleaned_data['totalcount'];
 
       // return data
       return $cleaned_data;
@@ -1218,25 +1300,24 @@ abstract class API extends CommonGLPI {
    /**
     * Add an object to GLPI
     *
-    * @since version 9.1
-    *
-    * @param      string  $itemtype  itemtype (class) of object
-    * @param      array   $params   array with theses options :
+    * @param $itemtype     string    itemtype (class) of object
+    * @param $params       array     with theses options :
     *    - 'input' : object with fields of itemtype to be inserted.
     *                You can add several items in one action by passing array of input object.
     *                Mandatory.
     *
     * @return   array of id
-    */
-   protected function createItems($itemtype, $params = array()) {
+   **/
+   protected function createItems($itemtype, $params=array()) {
+
       $this->initEndpoint();
-      $input = isset($params['input']) ? $params["input"] : null;
-      $item = new $itemtype;
+      $input    = isset($params['input']) ? $params["input"] : null;
+      $item     = new $itemtype;
       $response = "";
 
       if (is_array($input)) {
          $idCollection = array();
-         $failed = 0;
+         $failed       = 0;
          foreach($input as $object) {
             $object = get_object_vars($object);
             //check rights
@@ -1294,25 +1375,24 @@ abstract class API extends CommonGLPI {
    /**
     * update an object to GLPI
     *
-    * @since version 9.1
-    *
-    * @param      string  $itemtype  itemtype (class) of object
-    * @param      array   $params   array with theses options :
+    * @param $itemtype     string    itemtype (class) of object
+    * @param $params       array     with theses options :
     *    - 'input' : Array of objects with fields of itemtype to be updated.
     *                Mandatory.
     *                You must provide in each object a key named 'id' to identify item to update.
     *
     * @return   array of boolean
-    */
+   **/
    protected function updateItems($itemtype, $params = array()) {
+
       $this->initEndpoint();
-      $input = $params['input'];
-      $item = new $itemtype;
+      $input    = $params['input'];
+      $item     = new $itemtype;
       $response = "";
 
       if (is_array($input)) {
          $idCollection = array();
-         $failed = 0;
+         $failed       = 0;
          foreach($input as $object) {
             if (isset($object->id)) {
                if (!$item->getFromDB($object->id)) {
@@ -1370,14 +1450,11 @@ abstract class API extends CommonGLPI {
    }
 
 
-
    /**
     * delete one or more objects in GLPI
     *
-    * @since version 9.1
-    *
-    * @param      string   $itemtype  itemtype (class) of object
-    * @param      array    $params   array with theses options :
+    * @param $itemtype     string     itemtype (class) of object
+    * @param $params       array      with theses options :
     *    - 'input' : Array of objects with fields of itemtype to be updated.
     *                Mandatory.
     *                You must provide in each object a key named 'id' to identify item to delete.*
@@ -1385,16 +1462,17 @@ abstract class API extends CommonGLPI {
     *                      Optionnal.
     *    - 'history' : boolean, default true, false to disable saving of deletion in global history.
     *                  Optionnal.
+    *
     * @return boolean or array of boolean
-    */
-   protected function deleteItems($itemtype, $params = array()) {
-      $this->initEndpoint();
-      $default = array('force_purge' => false,
-                       'history'     => true);
-      $params = array_merge($default, $params);
+   **/
+   protected function deleteItems($itemtype, $params=array()) {
 
-      $input = $params['input'];
-      $item = new $itemtype;
+      $this->initEndpoint();
+      $default  = array('force_purge' => false,
+                        'history'     => true);
+      $params   = array_merge($default, $params);
+      $input    = $params['input'];
+      $item     = new $itemtype;
       $response = "";
 
       if (is_array($input)) {
@@ -1420,10 +1498,10 @@ abstract class API extends CommonGLPI {
                }
 
                //check rights
-               if ($params['force_purge']
-                   && !$item->can($object->id, PURGE)
-                   || !$params['force_purge']
-                   && !$item->can($object->id, DELETE)) {
+               if (($params['force_purge']
+                    && !$item->can($object->id, PURGE))
+                   || (!$params['force_purge']
+                       && !$item->can($object->id, DELETE))) {
                   $failed++;
                   $idCollection[] = array($object->id => $this->messageRightError(false));
                } else {
@@ -1497,12 +1575,11 @@ abstract class API extends CommonGLPI {
     *  - check session token
     *  - unlock session if needed (set ip to readmonly to permit concurrent calls)
     *
-    * @since version 9.1
-    *
-    * @param  boolean $unlock_session do we need to unlock session
-    * @param  string  $endpoint       name of the current function
-    */
-   private function initEndpoint($unlock_session = true, $endpoint = "") {
+    * @param $unlock_session   boolean  do we need to unlock session (default true)
+    * @param $endpoint         string       name of the current function (default '')
+   **/
+   private function initEndpoint($unlock_session=true, $endpoint="") {
+
       if ($endpoint === "") {
          $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
          $endpoint = $backtrace[1]['function'];
@@ -1515,12 +1592,12 @@ abstract class API extends CommonGLPI {
       }
    }
 
+
    /**
     * check if the app_toke in case of config ask to
-    *
-    * @since version 9.1
-    */
+   **/
    private function checkAppToken() {
+
       // check app token (if needed)
       if (!isset($this->parameters['app_token'])) {
          $this->parameters['app_token'] = "";
@@ -1536,11 +1613,10 @@ abstract class API extends CommonGLPI {
     * Log usage of the api into glpi historical or log files (defined by api config)
     * It stores the ip and the username of the current session.
     *
-    * @since version 9.1
-    *
-    * @param  string $endpoint function called by api to log
+    * @param $endpoint   string  function called by api to log (default '')
     */
-   private function logEndpointUsage($endpoint = "") {
+   private function logEndpointUsage($endpoint="") {
+
       $username = "";
       if (isset($_SESSION['glpiname'])) {
          $username = "(".$_SESSION['glpiname'].")";
@@ -1569,11 +1645,10 @@ abstract class API extends CommonGLPI {
    /**
     * Check that the session_token is provided and match to a valid php session
     *
-    * @since version 9.1
-    *
     * @return boolean
-    */
+   **/
    protected function checkSessionToken() {
+
       if (!isset($this->parameters['session_token'])
           || empty($this->parameters['session_token']))  {
          return $this->messageSessionTokenMissing();
@@ -1590,10 +1665,9 @@ abstract class API extends CommonGLPI {
 
    /**
     * Unlock the current session (readonly) to permit concurrent call
-    *
-    * @since version 9.1
-    */
+   **/
    private function unlockSessionIfPossible() {
+
       if (!$this->session_write) {
          session_write_close();
       }
@@ -1603,27 +1677,26 @@ abstract class API extends CommonGLPI {
    /**
     * Get last message added in $_SESSION by Session::addMessageAfterRedirect
     *
-    * @since version 9.1
-    *
     * @return     array  of messages
-    */
+   **/
    private function getGlpiLastMessage() {
-      $all_messages = array();
-      $messages = "";
-      if (isset($_SESSION["MESSAGE_AFTER_REDIRECT"])
-          && !empty($_SESSION["MESSAGE_AFTER_REDIRECT"])) {
-         $messages = $_SESSION["MESSAGE_AFTER_REDIRECT"];
 
+      $all_messages             = [];
+
+      $messages_after_redirect  = [];
+
+      if (isset($_SESSION["MESSAGE_AFTER_REDIRECT"])
+          && count($_SESSION["MESSAGE_AFTER_REDIRECT"]) > 0) {
+         $messages_after_redirect = $_SESSION["MESSAGE_AFTER_REDIRECT"];
          // Clean messages
-         $_SESSION["MESSAGE_AFTER_REDIRECT"] = "";
+         $_SESSION["MESSAGE_AFTER_REDIRECT"] = [];
       };
 
-      // split in array
-      $all_messages = preg_split( "/ (<br>|<\/h3>) /", $messages );
-
       // clean html
-      foreach($all_messages as &$message) {
-         $message = Html::clean($message);
+      foreach($messages_after_redirect as $type => $messages) {
+         foreach ($messages as $message) {
+            $all_messages[] = Html::clean($message);
+         }
       }
 
       return end($all_messages);
@@ -1632,9 +1705,7 @@ abstract class API extends CommonGLPI {
 
    /**
     * Show API Debug
-    *
-    * @since version 9.1
-    */
+   **/
    protected function showDebug() {
       Html::printCleanArray($this);
    }
@@ -1645,9 +1716,11 @@ abstract class API extends CommonGLPI {
     * in debug, it add body and some libs (essentialy to colorise markdown)
     * otherwise, it change only Content-Type of the page
     *
-    * @since version 9.1
-    */
-   protected function header($html = false, $title = "") {
+    * @param $html      (default false)
+    * @param $title     (default '')
+   **/
+   protected function header($html=false, $title="") {
+
       // Send UTF8 Headers
       $content_type = "application/json";
       if ($html) {
@@ -1675,20 +1748,24 @@ abstract class API extends CommonGLPI {
    /**
     * Display the API Documentation in Html (parsed from markdown)
     *
-    * @since version 9.1
-    *
-    * @param      string  $file   relative path of documentation file
-    */
+    * @param $file      string    relative path of documentation file
+   **/
    public function inlineDocumentation($file) {
       global $CFG_GLPI;
 
       self::header(true, __("API Documentation"));
-      echo Html::css("../"."lib/prism/prism.css");
-      echo Html::script("../"."lib/prism/prism.js");
+      echo Html::css($CFG_GLPI['root_doc']."/lib/prism/prism.css");
+      echo Html::script($CFG_GLPI['root_doc']."/lib/prism/prism.js");
 
       echo "<div class='documentation'>";
       $documentation = file_get_contents(GLPI_ROOT.'/'.$file);
-      echo ParsedownExtra::instance()->text($documentation);
+      $md = new Michelf\MarkdownExtra();
+      $md->code_class_prefix = "language-";
+      $md->header_id_func = function($headerName) {
+         $headerName = str_replace(array('(', ')'), '', $headerName);
+         return rawurlencode(strtolower(strtr($headerName, [' ' => '-'])));
+      };
+      echo $md->transform($documentation);
       echo "</div>";
 
       Html::nullFooter();
@@ -1700,16 +1777,15 @@ abstract class API extends CommonGLPI {
     * change value from  integer id to string name of foreign key
     * You can pass an array of array, this method is recursive.
     *
-    * @since version 9.1
-    *
-    * @param      array  $fields  array to check and transform
-    * @param      bool   $expand  array of option to enable, could be :
+    * @param $fields     array    to check and transform
+    * @param $expand     bool     array of option to enable, could be :
     *                                 - expand_dropdowns (default false)
     *                                 - get_hateoas      (default true)
     *
     * @return     array  altered $fields
-    */
-   protected static function parseDropdowns($fields, $params = array()) {
+   **/
+   protected static function parseDropdowns($fields, $params=array()) {
+
       // default params
       $default = array('expand_dropdowns' => false,
                        'get_hateoas'      => true);
@@ -1766,12 +1842,10 @@ abstract class API extends CommonGLPI {
    /**
     * retrieve all child class for itemtype parameter
     *
-    * @since version 9.1
-    *
-    * @param  string $itemtype
+    * @param  $itemtype   string
     *
     * @return array  child classes
-    */
+   **/
    static function getHatoasClasses($itemtype) {
       global $CFG_GLPI;
 
@@ -1799,12 +1873,12 @@ abstract class API extends CommonGLPI {
       if (in_array($itemtype, $CFG_GLPI["itemdevices_types"])) {
          //$hclasses[] = "Item_Devices";
          foreach($CFG_GLPI['device_types'] as $device_type) {
-            if ($device_type =="DeviceMemory"
-                  && !in_array($itemtype, $CFG_GLPI["itemdevicesmemory_types"])
-                || $device_type =="DevicePowerSupply"
-                  && !in_array($itemtype, $CFG_GLPI["itemdevicepowersupply_types"])
-                || $device_type =="DeviceNetworkCard"
-                  && !in_array($itemtype, $CFG_GLPI["itemdevicenetworkcard_types"])) {
+            if ((($device_type =="DeviceMemory")
+                 && !in_array($itemtype, $CFG_GLPI["itemdevicesmemory_types"]))
+                || (($device_type =="DevicePowerSupply")
+                    && !in_array($itemtype, $CFG_GLPI["itemdevicepowersupply_types"]))
+                || (($device_type =="DeviceNetworkCard")
+                    && !in_array($itemtype, $CFG_GLPI["itemdevicenetworkcard_types"]))) {
                continue;
             }
             $hclasses[] = $device_type;
@@ -1813,7 +1887,7 @@ abstract class API extends CommonGLPI {
 
       //specific case
       switch($itemtype) {
-         case 'Ticket':
+         case 'Ticket' :
             $hclasses[] = "TicketFollowup";
             $hclasses[] = "TicketTask";
             $hclasses[] = "TicketValidation";
@@ -1822,14 +1896,16 @@ abstract class API extends CommonGLPI {
             $hclasses[] = "Change_Ticket";
             $hclasses[] = "Item_Ticket";
             break;
-         case 'Problem':
+
+         case 'Problem' :
             $hclasses[] = "ProblemTask";
             $hclasses[] = "ProblemCost";
             $hclasses[] = "Change_Problem";
             $hclasses[] = "Problem_Ticket";
             $hclasses[] = "Item_Problem";
             break;
-         case 'Change':
+
+         case 'Change' :
             $hclasses[] = "ChangeTask";
             $hclasses[] = "ChangeCost";
             $hclasses[] = "Change_Project";
@@ -1837,7 +1913,8 @@ abstract class API extends CommonGLPI {
             $hclasses[] = "Change_Ticket";
             $hclasses[] = "Change_Item";
             break;
-         case 'Project':
+
+         case 'Project' :
             $hclasses[] = "ProjectTask";
             $hclasses[] = "ProjectCost";
             $hclasses[] = "Change_Project";
@@ -1852,9 +1929,10 @@ abstract class API extends CommonGLPI {
    /**
     * Send 404 error to client
     *
-    * @since version 9.1
-    */
-   public function messageNotfoundError($return_error = true) {
+    * @param $return_error   (default true)
+   **/
+   public function messageNotfoundError($return_error=true) {
+
       $this->returnError(__("Item not found"),
                          404,
                          "ERROR_ITEM_NOT_FOUND",
@@ -1866,9 +1944,10 @@ abstract class API extends CommonGLPI {
    /**
     * Send 401 error to client
     *
-    * @since version 9.1
-    */
-   public function messageBadArrayError($return_error = true) {
+    *  @param $return_error   (default true)
+   **/
+   public function messageBadArrayError($return_error=true) {
+
       $this->returnError(__("input parameter must be an array of objects"),
                          400,
                          "ERROR_BAD_ARRAY",
@@ -1880,9 +1959,10 @@ abstract class API extends CommonGLPI {
    /**
     * Send 405 error to client
     *
-    * @since version 9.1
-    */
-   public function messageLostError($return_error = true) {
+    *  @param $return_error   (default true)
+   **/
+   public function messageLostError($return_error=true) {
+
       $this->returnError(__("Method Not Allowed"),
                          405,
                          "ERROR_METHOD_NOT_ALLOWED",
@@ -1894,9 +1974,10 @@ abstract class API extends CommonGLPI {
    /**
     * Send 401 error to client
     *
-    * @since version 9.1
-    */
-   public function messageRightError($return_error = true) {
+    * @param $return_error   (default true)
+   **/
+   public function messageRightError($return_error=true) {
+
       $this->returnError(__("You don't have permission to perform this action."),
                          401,
                          "ERROR_RIGHT_MISSING",
@@ -1908,9 +1989,9 @@ abstract class API extends CommonGLPI {
    /**
     * Session Token KO
     *
-    * @since version 9.1
-    */
-   public function messageSessionError($return_error = true) {
+    *  @param $return_error   (default true)
+   */
+   public function messageSessionError($return_error=true) {
       $this->returnError(__("session_token seems invalid"),
                          401,
                          "ERROR_SESSION_TOKEN_INVALID",
@@ -1922,9 +2003,10 @@ abstract class API extends CommonGLPI {
    /**
     * Session Token missing
     *
-    * @since version 9.1
-    */
-   public function messageSessionTokenMissing($return_error = true) {
+    *  @param $return_error   (default true)
+   **/
+   public function messageSessionTokenMissing($return_error=true) {
+
       $this->returnError(__("parameter session_token is missing or empty"),
                          400,
                          "ERROR_SESSION_TOKEN_MISSING",
@@ -1933,19 +2015,23 @@ abstract class API extends CommonGLPI {
    }
 
 
-
    /**
     * Generic function to send a error message and an error code to client
     *
-    * @since version 9.1
-    *
-    * @param      string   $message     message to send (human readable)
-    * @param      integer  $httpcode    http code (see : https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
-    * @param      string   $statuscode  API status (to represend more precisely the current error)
-    * @param      boolean  $docmessage  if true, add a link to inline document in message
-    * @param      boolean  $return_response  if true, the error will be send to returnResponse function (who may exit after sending data), otherwise, we will return an array with the error.
-    */
-   public function returnError($message = "Bad Request", $httpcode = 400, $statuscode = "ERROR", $docmessage = true, $return_response = true) {
+    * @param $message          string      message to send (human readable)(default 'Bad Request')
+    * @param $httpcode         integer     http code (see : https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
+    *                                      (default 400)
+    * @param $statuscode       string      API status (to represend more precisely the current error)
+    *                                      (default ERROR)
+    * @param $docmessage       boolean     if true, add a link to inline document in message
+    *                                      (default true)
+    * @param $return_response  boolean     if true, the error will be send to returnResponse function
+    *                                      (who may exit after sending data), otherwise,
+    *                                      we will return an array with the error
+    *                                      (default true)
+   **/
+   public function returnError($message="Bad Request", $httpcode=400, $statuscode="ERROR",
+                               $docmessage=true, $return_response=true) {
       global $CFG_GLPI;
 
       if (empty($httpcode)) {
@@ -1956,13 +2042,13 @@ abstract class API extends CommonGLPI {
       }
 
       if ($docmessage) {
-         $message .= "; ".sprintf(__("view documentation in your browser at %s"), self::$api_url."/#$statuscode");
+         $message .= "; ".sprintf(__("view documentation in your browser at %s"),
+                                  self::$api_url."/#$statuscode");
       }
       if ($return_response) {
          return $this->returnResponse(array($statuscode, $message), $httpcode);
-      } else {
-         return array($statuscode, $message);
       }
+      return array($statuscode, $message);
    }
 
 }

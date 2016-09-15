@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -80,16 +80,20 @@ abstract class FQDNLabel extends CommonDBChild {
    **/
    static function checkFQDNLabel($label) {
 
-      if (strlen($label) >= 63) {
-         return false;
-      }
-
       if (strlen($label) == 1) {
          if (!preg_match("/^[0-9A-Za-z]$/", $label, $regs)) {
             return false;
          }
-      } else if (!preg_match("/^[0-9A-Za-z][0-9A-Za-z\-]*[0-9A-Za-z]+$/", $label, $regs)) {
-         return false;
+      } else {
+         $fqdn_regex = "/^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$/";
+         if (!preg_match($fqdn_regex, $label, $regs)) {
+            //check also Internationalized domain name
+            $punycode = new TrueBV\Punycode();
+            $idn = $punycode->encode($label);
+            if (!preg_match($fqdn_regex, $idn, $regs)) {
+               return false;
+            }
+         }
       }
 
       return true;

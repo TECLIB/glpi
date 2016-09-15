@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -80,7 +80,7 @@ class NotificationEvent extends CommonDBTM {
     *
     * @since version 0.83
     *
-    * @param itemtype string name of the type
+    * @param $itemtype string name of the type
     * @param $event   string name of the event
     *
     * @return string

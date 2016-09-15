@@ -594,7 +594,8 @@ class Search {
                   $FROM .= self::addMetaLeftJoin($data['itemtype'], $metacriteria['itemtype'],
                                                  $already_link_tables2,
                                                  (($metacriteria['value'] == "NULL")
-                                                  || (strstr($metacriteria['link'], "NOT"))));
+                                                  || (strstr($metacriteria['link'], "NOT"))),
+                                                 $sopt["joinparams"]);
                }
 
                // Link items tables
@@ -2273,6 +2274,7 @@ class Search {
 
       if (!empty($complexjoin)) {
          $addtable .= "_".$complexjoin;
+         $addtable2 .= "_".$complexjoin;
       }
 
       if ($meta) {
@@ -2298,7 +2300,7 @@ class Search {
       $tocompute      = "`$table$addtable`.`$field`";
       $tocomputeid    = "`$table$addtable`.`id`";
 
-      $tocomputetrans = "IFNULL(`$table".$addtable."_".$field."_trans`.`value`,'".self::NULLVALUE."') ";
+      $tocomputetrans = "IFNULL(`$table".$addtable."_trans`.`value`,'".self::NULLVALUE."') ";
 
       $ADDITONALFIELDS = '';
       if (isset($searchopt[$ID]["additionalfields"])
@@ -2360,15 +2362,28 @@ class Search {
             break;
 
          case "glpi_softwarelicenses.number" :
-            return " FLOOR(SUM(`$table$addtable2`.`$field`)
-                           * COUNT(DISTINCT `$table$addtable2`.`id`)
-                           / COUNT(`$table$addtable2`.`id`)) AS `".$NAME."_".$num."`,
-                     MIN(`$table$addtable2`.`$field`) AS `".$NAME."_".$num."_min`,
-                      $ADDITONALFIELDS";
+            if ($meta) {
+               return " FLOOR(SUM(`$table$addtable2`.`$field`)
+                              * COUNT(DISTINCT `$table$addtable2`.`id`)
+                              / COUNT(`$table$addtable2`.`id`)) AS `".$NAME."_".$num."`,
+                        MIN(`$table$addtable2`.`$field`) AS `".$NAME."_".$num."_min`,
+                         $ADDITONALFIELDS";
+            } else {
+               return " FLOOR(SUM(`$table$addtable`.`$field`)
+                              * COUNT(DISTINCT `$table$addtable`.`id`)
+                              / COUNT(`$table$addtable`.`id`)) AS `".$NAME."_".$num."`,
+                        MIN(`$table$addtable`.`$field`) AS `".$NAME."_".$num."_min`,
+                         $ADDITONALFIELDS";
+            }
 
          case "glpi_profiles.name" :
             if (($itemtype == 'User')
                 && ($ID == 20)) {
+
+               $addtable2 = '';
+               if ($meta) {
+                  $addtable2 = "_".$meta_type;
+               }
                return " GROUP_CONCAT(`$table$addtable`.`$field` SEPARATOR '".self::LONGSEP."') AS `".$NAME."_$num`,
                         GROUP_CONCAT(`glpi_profiles_users$addtable2`.`entities_id` SEPARATOR '".self::LONGSEP."')
                                     AS `".$NAME."_".$num."_entities_id`,
@@ -2383,6 +2398,11 @@ class Search {
          case "glpi_entities.completename" :
             if (($itemtype == 'User')
                 && ($ID == 80)) {
+               
+               $addtable2 = '';
+               if ($meta) {
+                  $addtable2 = "_".$meta_type;
+               }
                return " GROUP_CONCAT(`$table$addtable`.`completename` SEPARATOR '".self::LONGSEP."')
                                     AS `".$NAME."_$num`,
                         GROUP_CONCAT(`glpi_profiles_users$addtable2`.`profiles_id` SEPARATOR '".self::LONGSEP."')
@@ -2512,19 +2532,16 @@ class Search {
                                         SEPARATOR '".self::LONGSEP."') AS `".$NAME."_$num`,
                            $ADDITONALFIELDS";
                }
-//               $TRANS = '';
-//               if (Session::haveTranslations(getItemTypeForTable($table), $field)) {
-//                   $TRANS = "GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocomputetrans, '".self::NULLVALUE."'),
-//                                                          '".self::SHORTSEP."',$tocomputeid)
-//                                          SEPARATOR '".self::LONGSEP."')
-//                                  AS `".$NAME."_".$num."_trans`, ";
-//               }
-//               return " $tocompute AS `".$NAME."_$num`,
-//                        `$table$addtable`.`id` AS `".$NAME."_".$num."_id`,
-//                        $TRANS
-//                        $ADDITONALFIELDS";
+               $TRANS = '';
+               if (Session::haveTranslations(getItemTypeForTable($table), $field)) {
+                   $TRANS = "GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocomputetrans, '".self::NULLVALUE."'),
+                                                          '".self::SHORTSEP."',$tocomputeid)
+                                          SEPARATOR '".self::LONGSEP."')
+                                  AS `".$NAME."_".$num."_trans`, ";
+               }
                return " $tocompute AS `".$NAME."_$num`,
                         `$table$addtable`.`id` AS `".$NAME."_".$num."_id`,
+                        $TRANS
                         $ADDITONALFIELDS";
          }
       }
@@ -2537,15 +2554,13 @@ class Search {
                      && $searchopt[$ID]["computationgroupby"]))) { // Not specific computation
          $TRANS = '';
          if (Session::haveTranslations(getItemTypeForTable($table), $field)) {
-            $TRANS = "IFNULL(GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocomputetrans, '".self::NULLVALUE."'),
-                                                   '".self::SHORTSEP."',$tocomputeid) SEPARATOR '".self::LONGSEP."'),
-                                                   '".self::NULLVALUE.self::SHORTSEP."')
+            $TRANS = "GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocomputetrans, '".self::NULLVALUE."'),
+                                                   '".self::SHORTSEP."',$tocomputeid) SEPARATOR '".self::LONGSEP."')
                                   AS `".$NAME."_".$num."_trans`, ";
 
          }
-         return " IFNULL(GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocompute, '".self::NULLVALUE."'),
-                                               '".self::SHORTSEP."',$tocomputeid) SEPARATOR '".self::LONGSEP."'),
-                                               '".self::NULLVALUE.self::SHORTSEP."')
+         return " GROUP_CONCAT(DISTINCT CONCAT(IFNULL($tocompute, '".self::NULLVALUE."'),
+                                               '".self::SHORTSEP."',$tocomputeid) SEPARATOR '".self::LONGSEP."')
                               AS `".$NAME."_$num`,
                   $TRANS
                   $ADDITONALFIELDS";
@@ -3153,7 +3168,7 @@ class Search {
       }
 
       $tocompute      = "`$table`.`$field`";
-      $tocomputetrans = "`".$table."_".$field."_trans`.`value`";
+      $tocomputetrans = "`".$table."_trans`.`value`";
       if (isset($searchopt[$ID]["computation"])) {
          $tocompute = $searchopt[$ID]["computation"];
          $tocompute = str_replace("TABLE", "`$table`", $tocompute);
@@ -3502,7 +3517,6 @@ class Search {
                }
             }
 
-
             return "";
       }
    }
@@ -3525,7 +3539,6 @@ class Search {
    **/
    static function addLeftJoin($itemtype, $ref_table, array &$already_link_tables, $new_table,
                                $linkfield, $meta=0, $meta_type=0, $joinparams=array(), $field='') {
-      global $CFG_GLPI;
 
       // Rename table for meta left join
       $AS = "";
@@ -3567,9 +3580,7 @@ class Search {
 
       // Auto link
       if (($ref_table == $new_table)
-          && empty($complexjoin)
-          && (($field == '')
-              || !Session::haveTranslations(getItemTypeForTable($new_table), $field))) {
+          && empty($complexjoin)) {
          return "";
       }
 
@@ -3744,14 +3755,10 @@ class Search {
                                               $addcondition)";
                   $transitemtype = getItemTypeForTable($new_table);
                   if (Session::haveTranslations($transitemtype, $field)) {
-                     if (strstr($nt, $field)) {
-                        $transAS = $nt.'_trans';
-                     } else {
-                        $transAS = $nt."_$field".'_trans';
-                     }
+                     $transAS            = $nt.'_trans';
                      $specific_leftjoin .= "LEFT JOIN `glpi_dropdowntranslations` AS `$transAS`
                                              ON (`$transAS`.`itemtype` = '$transitemtype'
-                                                 AND `$transAS`.`items_id` = `$new_table`.`id`
+                                                 AND `$transAS`.`items_id` = `$nt`.`id`
                                                  AND `$transAS`.`language` = '".
                                                        $_SESSION['glpilanguage']."'
                                                  AND `$transAS`.`field` = '$field')";
@@ -3776,8 +3783,7 @@ class Search {
     * @return Meta Left join string
    **/
    static function addMetaLeftJoin($from_type, $to_type, array &$already_link_tables2,
-                                   $nullornott) {
-      global $CFG_GLPI;
+                                   $nullornott, $joinparams=array()) {
 
       $LINK = " INNER JOIN ";
       if ($nullornott) {
@@ -3787,6 +3793,11 @@ class Search {
       $from_table = getTableForItemType($from_type);
       $to_table   = getTableForItemType($to_type);
       $to_fk      = getForeignKeyFieldForTable($to_table);
+
+      $complexjoin = self::computeComplexJoinID($joinparams);
+      if ($complexjoin != '') {
+         $complexjoin .= '_';
+      }
 
       // Generic metacriteria
       switch ($to_type) {
@@ -3872,21 +3883,21 @@ class Search {
                   array_push($already_link_tables2,"glpi_softwareversions_$to_type");
                   array_push($already_link_tables2,"glpi_softwarelicenses_$to_type");
                   return " $LINK `glpi_computers_softwareversions`
-                                    AS `glpi_computers_softwareversions_$to_type`
-                              ON (`glpi_computers_softwareversions_$to_type`.`computers_id`
+                                    AS `glpi_computers_softwareversions_$complexjoin$to_type`
+                              ON (`glpi_computers_softwareversions_$complexjoin$to_type`.`computers_id`
                                        = `glpi_computers`.`id`
-                                  AND `glpi_computers_softwareversions_$to_type`.`is_deleted` = '0')
-                           $LINK `glpi_softwareversions` AS `glpi_softwareversions_$to_type`
-                              ON (`glpi_computers_softwareversions_$to_type`.`softwareversions_id`
-                                       = `glpi_softwareversions_$to_type`.`id`)
+                                  AND `glpi_computers_softwareversions_$complexjoin$to_type`.`is_deleted` = '0')
+                           $LINK `glpi_softwareversions` AS `glpi_softwareversions_$complexjoin$to_type`
+                              ON (`glpi_computers_softwareversions_$complexjoin$to_type`.`softwareversions_id`
+                                       = `glpi_softwareversions_$complexjoin$to_type`.`id`)
                            $LINK `glpi_softwares`
-                              ON (`glpi_softwareversions_$to_type`.`softwares_id`
+                              ON (`glpi_softwareversions_$complexjoin$to_type`.`softwares_id`
                                        = `glpi_softwares`.`id`)
-                           LEFT JOIN `glpi_softwarelicenses` AS `glpi_softwarelicenses_$to_type`
+                           LEFT JOIN `glpi_softwarelicenses` AS `glpi_softwarelicenses_$complexjoin$to_type`
                               ON (`glpi_softwares`.`id`
-                                       = `glpi_softwarelicenses_$to_type`.`softwares_id`".
+                                       = `glpi_softwarelicenses_$complexjoin$to_type`.`softwares_id`".
                                   getEntitiesRestrictRequest(' AND',
-                                                             "glpi_softwarelicenses_$to_type",
+                                                             "glpi_softwarelicenses_$complexjoin$to_type",
                                                              '', '', true).") ";
             }
             break;
@@ -4173,7 +4184,9 @@ class Search {
                   $count_display = 0;
                   $added         = array();
                   for ($k=0 ; $k<$data[$num]['count'] ; $k++) {
-                     if (strlen(trim($data[$num][$k]['name'])) > 0) {
+                     if (strlen(trim($data[$num][$k]['name'])) > 0
+                         && !in_array($data[$num][$k]['name']."-".$data[$num][$k]['entities_id'],
+                                      $added)) {
                         $text = sprintf(__('%1$s - %2$s'), $data[$num][$k]['name'],
                                         Dropdown::getDropdownName('glpi_entities',
                                                                   $data[$num][$k]['entities_id']));
@@ -4190,14 +4203,12 @@ class Search {
                         if (!empty($comp)) {
                            $text = sprintf(__('%1$s %2$s'), $text, "(".$comp.")");
                         }
-                        if (!in_array($text,$added)) {
-                           if ($count_display) {
-                              $out .= self::LBBR;
-                           }
-                           $count_display++;
-                           $out     .= $text;
-                           $added[]  = $text;
+                        if ($count_display) {
+                           $out .= self::LBBR;
                         }
+                        $count_display++;
+                        $out     .= $text;
+                        $added[]  = $data[$num][$k]['name']."-".$data[$num][$k]['entities_id'];
                      }
                   }
                   return $out;
@@ -4212,7 +4223,9 @@ class Search {
                   $count_display = 0;
                   for ($k=0 ; $k<$data[$num]['count'] ; $k++) {
                      if (isset($data[$num][$k]['name'])
-                         && (strlen(trim($data[$num][$k]['name'])) > 0)) {
+                         && (strlen(trim($data[$num][$k]['name'])) > 0)
+                         && !in_array($data[$num][$k]['name']."-".$data[$num][$k]['profiles_id'],
+                                      $added)) {
                         $text = sprintf(__('%1$s - %2$s'), $data[$num][$k]['name'],
                                         Dropdown::getDropdownName('glpi_profiles',
                                                                   $data[$num][$k]['profiles_id']));
@@ -4229,14 +4242,12 @@ class Search {
                         if (!empty($comp)) {
                            $text = sprintf(__('%1$s %2$s'), $text, "(".$comp.")");
                         }
-                        if (!in_array($text,$added)) {
-                           if ($count_display) {
-                              $out .= self::LBBR;
-                           }
-                           $count_display++;
-                           $out    .= $text;
-                           $added[] = $text;
+                        if ($count_display) {
+                           $out .= self::LBBR;
                         }
+                        $count_display++;
+                        $out    .= $text;
+                        $added[] = $data[$num][$k]['name']."-".$data[$num][$k]['profiles_id'];
                      }
                   }
                   return $out;

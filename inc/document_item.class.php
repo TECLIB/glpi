@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -514,8 +514,8 @@ class Document_Item extends CommonDBRelation{
                            $linkname = $tmpitem->getLink();
                         }
                      }
-                     $link = Toolbox::getItemTypeFormURL($itemtype);
-                     $name = "<a href=\"".$link."?id=".$data["id"]."\">".$linkname."</a>";
+                     $link     = $itemtype::getFormURLWithID($data['id']);
+                     $name = "<a href=\"".$link."\">".$linkname."</a>";
 
                      echo "<tr class='tab_bg_1'>";
 

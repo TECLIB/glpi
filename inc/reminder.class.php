@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -692,8 +692,8 @@ class Reminder extends CommonDBTM {
 
       $this->showFormHeader($options);
 
-      echo "<tr class='tab_bg_2'><td>".__('Title')."</td>";
-      echo "<td>";
+      echo "<tr class='tab_bg_2'><td colspan='2'>".__('Title')."</td>";
+      echo "<td colspan='2'>";
       if (!$ID) {
       echo "<input type='hidden' name='users_id' value='".$this->fields['users_id']."'>\n";
       }
@@ -714,8 +714,8 @@ class Reminder extends CommonDBTM {
 
       if (!isset($options['from_planning_ajax'])) {
          echo "<tr class='tab_bg_2'>";
-         echo "<td>".__('Visibility')."</td>";
-         echo "<td>";
+         echo "<td colspan='2'>".__('Visibility')."</td>";
+         echo "<td colspan='2'>";
          echo '<table><tr><td>';
          echo __('Begin').'</td><td>';
          Html::showDateTimeField("begin_view_date",
@@ -735,8 +735,8 @@ class Reminder extends CommonDBTM {
       }
 
       echo "<tr class='tab_bg_2'>";
-      echo "<td>".__('Status')."</td>";
-      echo "<td>";
+      echo "<td colspan='2'>".__('Status')."</td>";
+      echo "<td colspan='2'>";
       if ($canedit) {
          Planning::dropdownState("state", $this->fields["state"]);
       } else {
@@ -745,8 +745,8 @@ class Reminder extends CommonDBTM {
       echo "</td>\n";
       echo "</tr>\n";
 
-      echo "<tr class='tab_bg_2'><td >".__('Calendar')."</td>";
-      echo "<td>";
+      echo "<tr class='tab_bg_2'><td  colspan='2'>".__('Calendar')."</td>";
+      echo "<td colspan='2'>";
       if (isset($options['from_planning_ajax'])
           && $options['from_planning_ajax']) {
          echo Html::hidden('plan[begin]', array('value' => $options['begin']));
@@ -820,8 +820,6 @@ class Reminder extends CommonDBTM {
                                                   'items_id' => $ID));
             }
             echo "</td>";
-         } else {
-            echo "<td colspan='2'></td>";
          }
       }
       echo "</tr>\n";
@@ -858,7 +856,8 @@ class Reminder extends CommonDBTM {
     *    - end Date
     *    - color
     *    - event_type_color
-    *    - check_avaibility (boolean)
+    *    - check_planned (boolean)
+    *    - display_done_events (boolean)
     *
     * @return array of planning item
    **/
@@ -866,9 +865,10 @@ class Reminder extends CommonDBTM {
       global $DB, $CFG_GLPI;
 
       $default_options = array(
-         'color'            => '',
-         'event_type_color' => '',
-         'check_planned'    => false,
+         'color'               => '',
+         'event_type_color'    => '',
+         'check_planned'       => false,
+         'display_done_events' => true,
       );
       $options = array_merge($default_options, $options);
 
@@ -927,6 +927,11 @@ class Reminder extends CommonDBTM {
          $PLANNED = "AND state != ".Planning::INFO;
       }
 
+      $DONE_EVENTS = '';
+      if (!$options['display_done_events']) {
+         $DONE_EVENTS = "AND state != ".Planning::DONE;
+      }
+
       if ($ASSIGN) {
          $query2 = "SELECT DISTINCT `glpi_reminders`.*
                     FROM `glpi_reminders`
@@ -934,6 +939,7 @@ class Reminder extends CommonDBTM {
                     WHERE `glpi_reminders`.`is_planned` = '1'
                           AND $ASSIGN
                           $PLANNED
+                          $DONE_EVENTS
                           AND `begin` < '$end'
                           AND `end` > '$begin'
                     ORDER BY `begin`";

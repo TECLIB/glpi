@@ -52,7 +52,16 @@ function update0905to91() {
 
 
    $backup_tables = false;
-   $newtables     = array('glpi_objectlocks');
+   $newtables     = array(
+      'glpi_objectlocks',
+      'glpi_networkportfiberchannels',
+      'glpi_operatingsystemarchitectures',
+      'glpi_tasktemplates',
+      'glpi_budgettypes',
+      'glpi_apiclients',
+      'glpi_computerantiviruses',
+      'glpi_slts'
+   );
 
    foreach ($newtables as $new_table) {
       // rename new tables if exists ?
@@ -380,7 +389,7 @@ function update0905to91() {
    Config::setConfigurationValues('core', array('enable_api'                      => 0));
    Config::setConfigurationValues('core', array('enable_api_login_credentials'    => 0));
    Config::setConfigurationValues('core', array('enable_api_login_external_token' => 1));
-   Config::setConfigurationValues('core', array('url_base_api' => trim($current_config['url_base'], "/")."/api"));
+   Config::setConfigurationValues('core', array('url_base_api' => trim($current_config['url_base'], "/")."/apirest.php/"));
    if (!TableExists('glpi_apiclients')) {
       $query = "CREATE TABLE `glpi_apiclients` (
                   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -401,7 +410,8 @@ function update0905to91() {
                   KEY `is_active` (`is_active`)
                   ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
       $DB->queryOrDie($query, "9.1 add table glpi_apiclients");
-      $query = "INSERT INTO `glpi_apiclients` VALUES (1, 0, 1, 'full access from localhost', NULL, 1, INET_ATON('127.0.0.1'), INET_ATON('127.0.0.1'), '::1', '', NULL, 0, NULL)";
+      $query = "INSERT INTO `glpi_apiclients`
+                VALUES (1, 0, 1, 'full access from localhost', NOW(), 1, INET_ATON('127.0.0.1'), INET_ATON('127.0.0.1'), '::1', '', NULL, 0, NULL);";
       $DB->queryOrDie($query, "9.1 insert first line into table glpi_apiclients");
    }
 

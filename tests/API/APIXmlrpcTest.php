@@ -36,6 +36,7 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
 
    protected function setUp() {
       global $CFG_GLPI;
+
       $this->http_client = new GuzzleHttp\Client();
       $this->base_uri    = trim($CFG_GLPI['url_base'], "/")."/apixmlrpc.php";
    }
@@ -114,9 +115,10 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
       $data = xmlrpc_decode($res->getBody());
       $this->assertNotEquals(false, $data);
       $this->assertArrayHasKey('active_entity', $data);
-      $this->assertArrayHasKey('active_entity_recursive', $data);
-      $this->assertArrayHasKey('active_entities', $data);
-      $this->assertTrue(is_array($data['active_entities']), $data);
+      $this->assertArrayHasKey('id', $data['active_entity']);
+      $this->assertArrayHasKey('active_entity_recursive', $data['active_entity']);
+      $this->assertArrayHasKey('active_entities', $data['active_entity']);
+      $this->assertTrue(is_array($data['active_entity']['active_entities']));
    }
 
 
@@ -139,7 +141,9 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
 
       $data = xmlrpc_decode($res->getBody());
       $this->assertNotEquals(false, $data);
-      $this->assertArrayHasKey(4, $data);  // check presence of super-admin profile
+      $this->assertNotEquals(false, $data);
+      $this->assertArrayHasKey('myprofiles', $data);  // check presence of root key
+      $this->assertArrayHasKey('id', $data['myprofiles'][0]);  // check presence of id key in first entity
    }
 
 
@@ -249,6 +253,36 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
    /**
      * @depends testInitSessionCredentials
      */
+   public function testGetMultipleItems($session_token) {
+      // Get the User 'glpi' and the root entity in the same query
+      $res = $this->doHttpRequest('getMultipleItems', ['session_token'    => $session_token,
+                                                       'items'            => [['itemtype' => 'User',
+                                                                               'items_id' => 2],
+                                                                              ['itemtype' => 'Entity',
+                                                                               'items_id' => 0]],
+                                                       'expand_dropdowns' => true,
+                                                       'with_logs'        => true]);
+      $this->assertEquals(200, $res->getStatusCode());
+
+      $data = xmlrpc_decode($res->getBody());
+
+      $this->assertEquals(true, is_array($data));
+      $this->assertEquals(2, count($data));
+
+      foreach($data as $item) {
+         $this->assertArrayHasKey('id', $item);
+         $this->assertArrayHasKey('name', $item);
+         $this->assertArrayHasKey('entities_id', $item);
+         $this->assertArrayHasKey('links', $item);
+         $this->assertFalse(is_numeric($item['entities_id'])); // for expand_dropdowns
+         $this->assertArrayHasKey('_logs', $item); // with_logs == true
+      }
+   }
+
+
+   /**
+     * @depends testInitSessionCredentials
+     */
    public function testListSearchOptions($session_token) {
       // test retrieve all users
       $res = $this->doHttpRequest('listSearchOptions', ['session_token' => $session_token,
@@ -329,7 +363,7 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
 
       $computer = new Computer;
       $computers_exist = $computer->getFromDB($id);
-      $this->assertEquals(true, boolval($computers_exist));
+      $this->assertEquals(true, (bool) $computers_exist);
 
       return $id;
    }
@@ -364,9 +398,9 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
 
       $computer = new Computer;
       $computers_exist = $computer->getFromDB($first_computer['id']);
-      $this->assertEquals(true, boolval($computers_exist));
+      $this->assertEquals(true, (bool) $computers_exist);
       $computers_exist = $computer->getFromDB($secnd_computer['id']);
-      $this->assertEquals(true, boolval($computers_exist));
+      $this->assertEquals(true, (bool) $computers_exist);
 
       return $data;
    }
@@ -389,11 +423,11 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
       $this->assertNotEquals(false, $data);
       $computer = array_shift($data);
       $this->assertArrayHasKey($computers_id, $computer);
-      $this->assertEquals(true, boolval($computer[$computers_id]));
+      $this->assertEquals(true, (bool) $computer[$computers_id]);
 
       $computer = new Computer;
       $computers_exist = $computer->getFromDB($computers_id);
-      $this->assertEquals(true, boolval($computers_exist));
+      $this->assertEquals(true, (bool) $computers_exist);
       $this->assertEquals("abcdef", $computer->fields['serial']);
    }
 
@@ -420,10 +454,10 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
       foreach($data as $index => $row) {
          $computers_id = $computers_id_collection[$index]['id'];
          $this->assertArrayHasKey($computers_id, $row);
-         $this->assertEquals(true, boolval($row[$computers_id]));
+         $this->assertEquals(true, (bool) $row[$computers_id]);
 
          $computers_exist = $computer->getFromDB($computers_id);
-         $this->assertEquals(true, boolval($computers_exist));
+         $this->assertEquals(true, (bool) $computers_exist);
          $this->assertEquals("abcdef", $computer->fields['otherserial']);
       }
    }
@@ -445,7 +479,7 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
 
       $computer = new Computer;
       $computers_exist = $computer->getFromDB($computers_id);
-      $this->assertEquals(false, boolval($computers_exist));
+      $this->assertEquals(false, (bool) $computers_exist);
    }
 
 
@@ -469,10 +503,10 @@ class APIXmlrpcTest extends PHPUnit_Framework_TestCase {
       foreach($data as $index => $row) {
          $computers_id = $computers_id_collection[$index]['id'];
          $this->assertArrayHasKey($computers_id, $row);
-         $this->assertEquals(true, boolval($row[$computers_id]));
+         $this->assertEquals(true, (bool) $row[$computers_id]);
 
          $computers_exist = $computer->getFromDB($computers_id);
-         $this->assertEquals(false, boolval($computers_exist));
+         $this->assertEquals(false, (bool) $computers_exist);
       }
    }
 

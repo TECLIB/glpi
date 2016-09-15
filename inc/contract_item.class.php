@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -506,7 +506,7 @@ class Contract_Item extends CommonDBRelation{
          echo "</table>";
       } else {
          echo "<table class='tab_cadre_fixe'>";
-         echo "<tr><th>".__('No item found.')."</th></tr></table>";
+         echo "<tr><th>".__('No item found')."</th></tr></table>";
       }
 
       echo "</table>";

@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -69,6 +69,10 @@ if (isset($_POST["rubdoc"])) {
 
    if (preg_match('/[^a-z_\-0-9]/i', $_POST['myname'])) {
       throw new \RuntimeException('Invalid name provided!');
+   }
+
+   if (!isset($_POST['entity']) || $_POST['entity'] === '') {
+      $_POST['entity'] = $_SESSION['glpiactive_entity'];
    }
 
    Dropdown::show('Document',

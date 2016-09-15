@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -127,7 +127,7 @@ if (!isset($AJAX_INCLUDE) && !isset($PLUGINS_INCLUDED)) {
 
 
 if (!isset($_SESSION["MESSAGE_AFTER_REDIRECT"])) {
-   $_SESSION["MESSAGE_AFTER_REDIRECT"]="";
+   $_SESSION["MESSAGE_AFTER_REDIRECT"]=[];
 }
 
 // Manage force tab

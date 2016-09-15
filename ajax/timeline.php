@@ -3,7 +3,7 @@
  * @version $Id: timeline_viewsubitem.php 23588 2015-07-10 11:09:46Z moyo $
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -88,6 +88,14 @@ switch($_POST['action']) {
             $_REQUEST['load_kb_sol'] = 0;
          }
          $ticket->showSolutionForm($_REQUEST['load_kb_sol']);
+
+         // show approbation form on top when ticket is solved
+         if ($ticket->fields["status"] == CommonITILObject::SOLVED) {
+            echo "<div class='approbation_form'>";
+            $followup_obj = new TicketFollowup();
+            $followup_obj->showApprobationForm($ticket);
+            echo "</div>";
+         }
       }
       Html::ajaxFooter();
       break;

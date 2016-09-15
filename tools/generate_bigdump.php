@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -219,5 +219,4 @@ for ($i=0 ; $i<max(1,pow($entity_number,1/2))&&$added<$entity_number ; $i++) {
 
 DBmysql::optimize_tables();
 // clean messages;
-$_SESSION["MESSAGE_AFTER_REDIRECT"]=''
-?>
+$_SESSION["MESSAGE_AFTER_REDIRECT"]= [];

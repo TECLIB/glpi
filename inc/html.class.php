@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -539,55 +539,91 @@ class Html {
 
 
    /**
-    * Display a div containing a message set in session in the previous page
+    * Display a div containing messages set in session in the previous page
    **/
    static function displayMessageAfterRedirect() {
 
       // Affichage du message apres redirection
       if (isset($_SESSION["MESSAGE_AFTER_REDIRECT"])
-          && !empty($_SESSION["MESSAGE_AFTER_REDIRECT"])) {
+          && count($_SESSION["MESSAGE_AFTER_REDIRECT"]) > 0) {
 
-         echo "<div id='message_after_redirect' title='".__('Information')."'>";
-         echo $_SESSION["MESSAGE_AFTER_REDIRECT"];
-         echo "</div>";
+         foreach($_SESSION['MESSAGE_AFTER_REDIRECT'] as $msgtype => $messages) {
+            //get messages
+            if (count($messages) > 0) {
+               $html_messages = implode('<br/>', $messages);
+            } else {
+               continue;
+            }
 
-         echo Html::scriptBlock("
-            $(document).ready(function() {
-               $('#message_after_redirect').dialog({
-                  dialogClass: 'message_after_redirect',
-                  minHeight: 40,
-                  minWidth: 200,
-                  position: {
-                     my: 'right bottom',
-                     at: 'right-20 bottom-20',
-                     of: window,
-                     collision: 'none'
-                  },
-                  autoOpen: false,
-                  show: {
-                    effect: 'slide',
-                    direction: 'down',
-                    'duration': 800
-                  }
-               })
-               .dialog('open');
+            //set title and css class
+            switch ($msgtype) {
+               case ERROR:
+                  $title = _('Error');
+                  $class = 'err_msg';
+                  break;
+               case WARNING:
+                  $title = _('Warning');
+                  $class = 'warn_msg';
+                  break;
+               case INFO:
+                  $title = _('Information');
+                  $class = 'info_msg';
+                  break;
+            }
 
-               // close dialog on outside click
-               $(document.body).on('click', function(e){
-                  if ($('#message_after_redirect').dialog('isOpen')
-                      && !$(e.target).is('.ui-dialog, a')
-                      && !$(e.target).closest('.ui-dialog').length) {
-                     $('#message_after_redirect').dialog('close');
-                     // redo focus on initial element
-                     e.target.focus();
-                  }
+
+            echo "<div id=\"message_after_redirect_$msgtype\" title=\"$title\">";
+            echo $html_messages;
+            echo "</div>";
+
+            $scriptblock = "
+               $(document).ready(function() {
+                  $('#message_after_redirect_$msgtype').dialog({
+                     dialogClass: 'message_after_redirect $class',
+                     minHeight: 40,
+                     minWidth: 200,
+                     position: {
+                        my: 'right bottom',
+                        at: 'right-20 bottom-20',
+                        of: window,
+                        collision: 'none'
+                     },
+                     autoOpen: false,
+                     show: {
+                       effect: 'slide',
+                       direction: 'down',
+                       'duration': 800
+                     }
+                  })
+                  .dialog('open');";
+
+            //do not autoclose errors
+            if ($msgtype != ERROR) {
+               $scriptblock .= "
+
+                  // close dialog on outside click
+                  $(document.body).on('click', function(e){
+                     if ($('#message_after_redirect_$msgtype').dialog('isOpen')
+                         && !$(e.target).is('.ui-dialog, a')
+                         && !$(e.target).closest('.ui-dialog').length) {
+                        $('#message_after_redirect_$msgtype').dialog('close');
+                        // redo focus on initial element
+                        e.target.focus();
+                     }
+                  });";
+            }
+
+            $scriptblock .= "
+
                });
-            });
-         ");
+            ";
+
+            echo Html::scriptBlock($scriptblock);
+         }
       }
 
       // Clean message
-      $_SESSION["MESSAGE_AFTER_REDIRECT"] = "";
+      $_SESSION["MESSAGE_AFTER_REDIRECT"] = [];
    }
 
 
@@ -597,7 +633,7 @@ class Html {
       echo Html::scriptBlock("
       displayAjaxMessageAfterRedirect = function() {
          // attach MESSAGE_AFTER_REDIRECT to body
-         $('#message_after_redirect').remove();
+         $('.message_after_redirect').remove();
          $.ajax({
             url:  '".$CFG_GLPI['root_doc']."/ajax/displayMessageAfterRedirect.php',
             success: function(html) {
@@ -1184,7 +1220,7 @@ class Html {
          }
 
          //fullcalendar
-         $filename = "/lib/jqueryplugins/fullcalendar/lang/".
+         $filename = "/lib/jqueryplugins/fullcalendar/locale/".
                      $CFG_GLPI["languages"][$_SESSION['glpilanguage']][2].".js";
          if (file_exists(GLPI_ROOT.$filename)) {
             echo Html::script($CFG_GLPI["root_doc"].$filename);
@@ -1822,15 +1858,7 @@ class Html {
 
          echo "</td>";
       }
-      echo "<td class='right'>";
-      echo "<a href='http://glpi-project.org/'>";
-      echo "<span class='copyright'>GLPI ".$CFG_GLPI["version"]." Copyright (C)".
-           " 2015".
-           /*"-".date("Y").*/ // TODO, decomment this in 2016
-           " by Teclib'".
-           " - Copyright (C) 2003-2015 INDEPNET Development Team".
-           "</span>";
-      echo "</a></td>";
+      echo "<td class='right'>" . self::getCopyrightMessage() . "</td>";
       echo "</tr></table></div>";
 
       if ($_SESSION['glpi_use_mode'] == Session::TRANSLATION_MODE) { // debug mode traduction
@@ -2213,16 +2241,8 @@ class Html {
       echo "</div>"; // fin de la div id ='page' initiée dans la fonction header
 
       echo "<div id='footer'>";
-      echo "<table width='100%'><tr><td class='right'>";
-      echo "<a href='http://glpi-project.org/'>";
-      echo "<span class='copyright'>GLPI ".$CFG_GLPI["version"].
-           " Copyright (C) ".
-           "2015-".
-           //date("Y"). // TODO, decomment this in 2016
-           " by Teclib'".
-           " - Copyright (C) 2003-2015 INDEPNET Development Team".
-           "</span>";
-      echo "</a></td></tr></table></div>";
+      echo "<table width='100%'><tr><td class='right'>" . self::getCopyrightMessage();
+      echo "</td></tr></table></div>";
 
       if ($_SESSION['glpi_use_mode'] == Session::TRANSLATION_MODE) { // debug mode traduction
          echo "<div id='debug-float'>";
@@ -2295,16 +2315,7 @@ class Html {
       if (!isCommandLine()) {
          echo "</div></div>";
 
-         echo "<div id='footer-login'>";
-         echo "<a href='http://glpi-project.org/' title='Powered By Teclib'>";
-         echo "GLPI version ".(isset($CFG_GLPI["version"])?$CFG_GLPI["version"]:"").
-              " Copyright (C) ".
-              "2015-".
-              //date("Y"). // TODO, decomment this in 2016
-              " By Teclib'".
-              " - Copyright (C) 2003-2015 INDEPNET Development Team";
-         echo "</a></div>";
-
+         echo "<div id='footer-login'>" . self::getCopyrightMessage() . "</div>";
          echo "</body></html>";
       }
       closeDBConnections();
@@ -3913,7 +3924,7 @@ class Html {
             'tabfocus autoresize link image',
             'code fullscreen'
          ],
-         toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image searchreplace code fullscreen',
+         toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image code fullscreen',
       });
    ";
 
@@ -5797,5 +5808,22 @@ class Html {
          }).text('".Toolbox::addslashes_deep($msg)."');
          " ;
    }
+
+   /**
+    * Get copyright message as HTML (used in footers)
+    *
+    * @since 9.1
+    *
+    * @return text
+    */
+   static function getCopyrightMessage() {
+      $message = "<a href=\"http://glpi-project.org/\" title=\"Powered By Teclib\" class=\"copyright\">";
+      $message .= "GLPI " .
+         (isset($CFG_GLPI["version"]) ? $CFG_GLPI['version'] : GLPI_VERSION) .
+         " Copyright (C) 2015-" . GLPI_YEAR . " Teclib'".
+         " - Copyright (C) 2003-2015 INDEPNET Development Team".
+         "</a>";
+      return $message;
+   }
 }
-?>
+

@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -388,14 +388,6 @@ class Printer  extends CommonDBTM {
 
       // Display auto inventory informations
       $rowspan        = 5;
-      $inventory_show = false;
-
-       if (!empty($ID)
-           && $this->fields["is_dynamic"]) {
-          $inventory_show = true;
-          $rowspan       -= 2;
-       }
-
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__('Domain')."</td>\n";
       echo "<td>";
@@ -449,14 +441,15 @@ class Printer  extends CommonDBTM {
       Dropdown::showYesNo("have_wifi", $this->fields["have_wifi"]);
       echo "</td></tr></table>\n";
       echo "</td>";
-      if ($inventory_show) {
-         echo "<td rowspan='2'>".__('Automatic inventory')."</td>";
-         echo "<td rowspan='2'>";
-         Plugin::doHook("autoinventory_information", $this);
-         echo "</td>";
-      }
       echo "</tr>";
-
+      // Display auto inventory informations
+      if (!empty($ID)
+         && $this->fields["is_dynamic"]) {
+         echo "<tr class='tab_bg_1'><td colspan='4'>";
+         Plugin::doHook("autoinventory_information", $this);
+         echo "</td></tr>";
+      }
+      
       $this->showFormButtons($options);
 
       return true;

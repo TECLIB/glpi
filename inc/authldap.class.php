@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -2022,7 +2022,7 @@ class AuthLDAP extends CommonDBTM {
     * @param $ldap_server        ID of the LDAP server to use
     * @param $display            display message information on redirect (false by default)
     *
-    * @return  nothing
+    * @return  array with state, else false
    **/
    static function ldapImportUserByServerId($params=array(), $action, $ldap_server,
                                             $display=false) {

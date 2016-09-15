@@ -3,7 +3,7 @@
  * @version $Id$
  -------------------------------------------------------------------------
  GLPI - Gestionnaire Libre de Parc Informatique
- Copyright (C) 2015 Teclib'.
+ Copyright (C) 2015-2016 Teclib'.
 
  http://glpi-project.org
 
@@ -110,6 +110,10 @@ class APIXmlrpc extends API {
       // get complete php session
       } else if ($resource === "getFullSession") {
          return $this->returnResponse($this->getFullSession($this->parameters));
+
+      // get multiple items (with various itemtype)
+      } else if ($resource === "getMultipleItems") {
+         return $this->returnResponse($this->getMultipleItems($this->parameters));
 
       // list searchOptions of an itemtype
       } else if ($resource === "listSearchOptions") {
