@@ -60,6 +60,8 @@ class DbTestCase extends PHPUnit_Framework_TestCase {
 
       //reset entity in session
       Session::changeActiveEntities(getItemByTypeName('Entity', '_test_root_entity',  true), true);
+      //reset show_count_on_tabs
+      $_SESSION['glpishow_count_on_tabs'] = 1;
    }
 
 
