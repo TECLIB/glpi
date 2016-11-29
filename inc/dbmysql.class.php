@@ -125,7 +125,7 @@ class DBmysql {
          $this->connected = false;
          $this->error     = 1;
       } else {
-         $this->dbh->query("SET NAMES '" . (isset($this->dbenc) ? $this->dbenc : "utf8") . "'");
+         $this->dbh->set_charset(isset($this->dbenc) ? $this->dbenc : "utf8");
 
          if (GLPI_FORCE_EMPTY_SQL_MODE) {
             $this->dbh->query("SET SESSION sql_mode = ''");
@@ -381,7 +381,12 @@ class DBmysql {
     * @return list of tables
    **/
    function list_tables($table="glpi_%") {
-      return $this->query("SHOW TABLES LIKE '".$table."'");
+      return $this->query(
+         "SELECT TABLE_NAME FROM information_schema.`TABLES`
+             WHERE TABLE_SCHEMA = '{$this->dbdefault}'
+                AND TABLE_TYPE = 'BASE TABLE'
+                AND TABLE_NAME LIKE '$table'"
+      );
    }
 
 

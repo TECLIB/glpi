@@ -36,7 +36,8 @@
 */
 
 // Current version of GLPI
-define("GLPI_VERSION","9.1");
+define("GLPI_VERSION","9.1.1");
+define("GLPI_SCHEMA_VERSION","9.1.1");
 define('GLPI_YEAR', '2016');
 define("GLPI_DEMO_MODE","0");
 
@@ -299,7 +300,7 @@ $CFG_GLPI['planning_add_types']           = array('Reminder');
 $CFG_GLPI["globalsearch_types"]           = array('Computer', 'Contact', 'Document',  'Monitor',
                                                   'NetworkEquipment', 'Peripheral', 'Phone',
                                                   'Printer', 'Software', 'Supplier', 'Ticket',
-                                                  'SoftwareLicense');
+                                                  'SoftwareLicense', 'User');
 
 // New config options which can be missing during migration
 $CFG_GLPI["number_format"]  = 0;
@@ -339,7 +340,8 @@ $CFG_GLPI['layout_excluded_pages'] = array("profile.form.php",
                                            "config.form.php",
                                            "common.tabs.php",
                                            "transfer.form.php",
-                                           "entity.form.php");
+                                           "entity.form.php",
+                                           "queuedmail.form.php");
 
 $CFG_GLPI['lock_lockable_objects'] = array('Budget',  'Change', 'Contact', 'Contract', 'Document',
                                            'CartridgeItem', 'Computer', 'ConsumableItem', 'Entity',

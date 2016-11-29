@@ -1339,7 +1339,7 @@ class Entity extends CommonTreeDropdown {
       Dropdown::showFromArray('autofill_decommission_date', $options,
                               array('value' => $entity->getField('autofill_decommission_date')));
 
-      echo "</td><td colspan='2'></td></tr>";
+      echo "</td></tr>";
 
       echo "<tr><th colspan='4'>"._n('Software', 'Software', Session::getPluralNumber())."</th></tr>";
       echo "<tr class='tab_bg_2'>";
@@ -2215,13 +2215,13 @@ class Entity extends CommonTreeDropdown {
       }
 
       if (strstr($url,"[SLALEVEL_ID]")) {
-         $url = str_replace("[SLALEVEL_ID]", $ticket->fields['slalevels_id'], $url);
+         $url = str_replace("[SLALEVEL_ID]", $ticket->fields['ttr_slalevels_id'], $url);
       }
 
       if (strstr($url,"[SLALEVEL_NAME]")) {
          $url = str_replace("[SLALEVEL_NAME]",
                             urlencode(Dropdown::getDropdownName('glpi_slalevels',
-                                                                $ticket->fields['slalevels_id'])),
+                                                                $ticket->fields['ttr_slalevels_id'])),
                             $url);
       }
 

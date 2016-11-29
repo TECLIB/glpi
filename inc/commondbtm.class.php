@@ -223,6 +223,15 @@ class CommonDBTM extends CommonGLPI {
 
 
    /**
+    * Actions done to not show some fields when geting a single item from API calls
+    *
+    * @param array $fields Fields to unset undiscloseds
+    */
+   static public function unsetUndisclosedFields(&$fields) {
+   }
+
+
+   /**
     * Retrieve all items from the database
     *
     * @param $condition    condition used to search if needed (empty get all) (default '')
@@ -781,6 +790,11 @@ class CommonDBTM extends CommonGLPI {
       // Store input in the object to be available in all sub-method / hook
       $this->input = $input;
 
+      // Manage the _no_history
+      if (!isset($this->input['_no_history'])) {
+         $this->input['_no_history'] = !$history;
+      }
+
       if (isset($this->input['add'])) {
          // Input from the interface
          // Save this data to be available if add fail
@@ -1039,6 +1053,11 @@ class CommonDBTM extends CommonGLPI {
 
       // Store input in the object to be available in all sub-method / hook
       $this->input = $input;
+
+      // Manage the _no_history
+      if (!isset($this->input['_no_history'])) {
+         $this->input['_no_history'] = !$history;
+      }
 
       // Plugin hook - $this->input can be altered
       Plugin::doHook("pre_item_update", $this);
@@ -1992,6 +2011,9 @@ class CommonDBTM extends CommonGLPI {
          echo "<th colspan='$colspan'>";
          printf(__('Created on %s'), Html::convDateTime($this->fields["date_creation"]));
          echo "</th>";
+      } else if(!isset($options['withtemplate']) || $options['withtemplate'] == 0) {
+         echo "<th colspan='$colspan'>";
+         echo "</th>";
       }
 
       if (isset($options['withtemplate']) && $options['withtemplate']) {
@@ -2005,6 +2027,9 @@ class CommonDBTM extends CommonGLPI {
          echo "<th colspan='$colspan'>";
          //TRANS: %s is the datetime of update
          printf(__('Last update on %s'), Html::convDateTime($this->fields["date_mod"]));
+         echo "</th>";
+      } else {
+         echo "<th colspan='$colspan'>";
          echo "</th>";
       }
 
@@ -4347,7 +4372,7 @@ class CommonDBTM extends CommonGLPI {
                (strpos($target, '?') ? '&amp;' : '?')
                . "withtemplate=1";
             $target_create = $target . $create_params;
-            echo "<tr><td class='tab_bg_2 center b' colspan='2'>";
+            echo "<tr><td class='tab_bg_2 center b' colspan='3'>";
             echo "<a href=\"$target_create\">" . __('Add a template...') . "</a>";
             echo "</td></tr>";
          }

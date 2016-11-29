@@ -523,12 +523,13 @@ function getTreeLeafValueName($table, $ID, $withcomment=false, $translate=true) 
  * @param $ID           integer  ID of the element
  * @param $withcomment  boolean  1 if you want to give the array with the comments (false by default)
  * @param $translate    boolean  (true by default)
+ * @param $tooltip      boolean  (true by default) returns a tooltip, else returns only 'comment'
  *
  * @return string : completename of the element
  *
  * @see getTreeLeafValueName
 **/
-function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=true) {
+function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=true, $tooltip=true) {
    global $DB;
 
    $name    = "";
@@ -570,11 +571,12 @@ function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=tr
          } else {
             $name = $DB->result($result,0,"completename");
          }
-         $comment  = sprintf(__('%1$s: %2$s')."<br>",
-                             "<span class='b'>".__('Complete name')."</span>",
-                             $name);
-         $comment .= "<span class='b'>&nbsp;".__('Comments')."&nbsp;</span>";
-
+         if( $tooltip ) {
+            $comment  = sprintf(__('%1$s: %2$s')."<br>",
+                                "<span class='b'>".__('Complete name')."</span>",
+                                $name);
+            $comment .= "<span class='b'>&nbsp;".__('Comments')."&nbsp;</span>";
+         }
          $transcomment = $DB->result($result,0,"transcomment");
          if ($translate && !empty($transcomment)) {
             $comment .= nl2br($transcomment);
@@ -1690,9 +1692,6 @@ function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$valu
       return $query." 1 ) ";
    }
 
-   if (!empty($table)) {
-      $query .= "`$table`.";
-   }
    if (empty($field)) {
       if ($table == 'glpi_entities') {
          $field = "id";
@@ -1700,8 +1699,13 @@ function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$valu
          $field = "entities_id";
       }
    }
+   if (empty($table)) {
+      $field = "`$field`";
+   } else {
+      $field = "`$table`.`$field`";
+   }
 
-   $query .= "`$field`";
+   $query .= "$field";
 
    if (is_array($value)) {
       $query .= " IN ('" . implode("','",$value) . "') ";
@@ -1731,10 +1735,10 @@ function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$valu
 
       if (count($ancestors)) {
          if ($table == 'glpi_entities') {
-            $query .= " OR `$table`.`$field` IN ('" . implode("','",$ancestors) . "')";
+            $query .= " OR $field IN ('" . implode("','",$ancestors) . "')";
          } else {
-            $query .= " OR (`$table`.`is_recursive`='1' ".
-                           "AND `$table`.`$field` IN ('" . implode("','",$ancestors) . "'))";
+            $recur = (empty($table) ? '`is_recursive`' : "`$table`.`is_recursive`");
+            $query .= " OR ($recur='1' AND $field IN ('" . implode("','",$ancestors) . "'))";
          }
       }
    }

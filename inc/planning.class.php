@@ -48,16 +48,17 @@ class Planning extends CommonGLPI {
 
    static $rightname = 'planning';
 
-   static $palette_bg = array("#FFEEC4", "#D4EDFB", "#E1D0E1", "#CDD7A9", "#F8C8D2",
-                              "#D6CACA", "#D3D6ED", "#C8E5E3", "#FBD5BF", "#E9EBA2",
-                              "#E8E5E5", "#DBECDF", "#FCE7F2", "#E9D3D3", "#D2DBDC");
+   static $palette_bg = array('#FFEEC4', '#D4EDFB', '#E1D0E1', '#CDD7A9', '#F8C8D2',
+                              '#D6CACA', '#D3D6ED', '#C8E5E3', '#FBD5BF', '#E9EBA2',
+                              '#E8E5E5', '#DBECDF', '#FCE7F2', '#E9D3D3', '#D2DBDC');
 
    static $palette_fg = array('#57544D', '#59707E', '#5B3B5B', '#3A431A', '#58242F',
                               '#3B2727', '#272D59', '#2E4645', '#6F4831', '#46481B',
                               '#4E4E4E', '#274C30', '#6A535F', '#473232', '#454545',);
 
    static $palette_ev = array('#E94A31', '#5174F2', '#51C9F2', '#FFCC29', '#20C646',
-                              '#364959', '#8C5344');
+                              '#364959', '#8C5344', '#FF8100', '#F600C4', '#0017FF',
+                              '#000000', '#FFFFFF', '#005800', '#925EFF');
 
    static $directgroup_itemtype = array('ProjectTask', 'TicketTask', 'ProblemTask');
 
@@ -609,15 +610,19 @@ class Planning extends CommonGLPI {
                element.find('.fc-list-item-title > a').prepend(eventtype_marker);
 
                var content = event.content;
+               var tooltip = event.tooltip;
                if(view.name !== 'month' && view.name !== 'listYear' && !event.allDay){
                   element
                      .append('<div class=\"content\">'+content+'</div>');
                }
 
                // add classes to current event
-               added_classes = event.end.isBefore(moment())      ? ' event_past'   : '';
-               added_classes+= event.end.isAfter(moment())       ? ' event_future' : '';
-               added_classes+= event.end.isSame(moment(), 'day') ? ' event_today'  : '';
+               if (typeof event.end !== 'undefined'
+                   && event.end !== null) {
+                  added_classes = event.end.isBefore(moment())      ? ' event_past'   : '';
+                  added_classes+= event.end.isAfter(moment())       ? ' event_future' : '';
+                  added_classes+= event.end.isSame(moment(), 'day') ? ' event_today'  : '';
+               }
                if (event.state != '') {
                   added_classes+= event.state == 0 ? ' event_info'
                                 : event.state == 1 ? ' event_todo'
@@ -638,7 +643,7 @@ class Planning extends CommonGLPI {
                   }
                   element.qtip({
                      position: qtip_position,
-                     content: content,
+                     content: tooltip,
                      style: {
                         classes: 'qtip-shadow qtip-bootstrap'
                      },
@@ -856,6 +861,42 @@ class Planning extends CommonGLPI {
       return;
    }
 
+   /**
+    * Return a palette array (for example self::$palette_bg)
+    * @param  string $palette_name  the short name for palette (bg, fg, ev)
+    * @return mixed                 the palette array or false
+    *
+    * @since  9.1.1
+    */
+   static function getPalette($palette_name = 'bg') {
+      if (in_array($palette_name, array('bg', 'fg', 'ev'))) {
+         return self::${"palette_$palette_name"};
+      }
+
+      return false;
+   }
+
+
+   /**
+    * Return an hexa color from a palette
+    * @param  string  $palette_name the short name for palette (bg, fg, ev)
+    * @param  integer $color_index  The color index in this palette
+    * @return mixed                 the color in hexa (ex: #FFFFFF) or false
+    *
+    * @since  9.1.1
+    */
+   static function getPaletteColor($palette_name = 'bg', $color_index = 0) {
+      if ($palette = self::getPalette($palette_name)) {
+         if ($color_index > count($palette)) {
+            $color_index = $color_index % count($palette);
+         }
+
+         return $palette[$color_index];
+      }
+
+      return false;
+   }
+
 
    /**
     * Init $_SESSION['glpi_plannings'] var with thses keys :
@@ -875,7 +916,7 @@ class Planning extends CommonGLPI {
       if (!isset($_SESSION['glpi_plannings']['filters'])) {
          $_SESSION['glpi_plannings']['filters']   = array();
          $_SESSION['glpi_plannings']['plannings'] = array('user_'.$_SESSION['glpiID'] => array(
-                                                               'color'   => self::$palette_bg[0],
+                                                               'color'   => self::getPaletteColor('bg', 0),
                                                                'display' => true,
                                                                'type'    => 'user'));
       }
@@ -884,12 +925,15 @@ class Planning extends CommonGLPI {
       $filters = &$_SESSION['glpi_plannings']['filters'];
       $index_color = 0;
       foreach($CFG_GLPI['planning_types'] as $planning_type) {
-         if (!isset($filters[$planning_type])) {
-            $filters[$planning_type] = array('color'   => self::$palette_ev[$index_color],
-                                             'display' => true,
-                                             'type'    => 'event_filter');
+         if ($planning_type::canView()) {
+            if (!isset($filters[$planning_type])) {
+               $filters[$planning_type] = array('color'   => self::getPaletteColor('ev',
+                                                                                   $index_color),
+                                                'display' => true,
+                                                'type'    => 'event_filter');
+            }
+            $index_color++;
          }
-         $index_color++;
       }
 
       // computer color index for plannings
@@ -1149,10 +1193,7 @@ class Planning extends CommonGLPI {
          $color = $filter_data['color'];
       } else {
          $params['filter_color_index']++;
-         if (!isset(self::$palette_bg[$params['filter_color_index']])) {
-            $params['filter_color_index'] = 0;
-            $color = self::$palette_bg[$params['filter_color_index']];
-         }
+         $color = self::getPaletteColor('bg', $params['filter_color_index']);
       }
 
 
@@ -1227,10 +1268,16 @@ class Planning extends CommonGLPI {
       $rand = mt_rand();
       echo "<form action='".self::getFormURL()."'>";
       echo __("Actor").": <br>";
+
+      $planning_types = ['user' => __("User")];
+
+      if (Session::haveRightsOr('planning', array(self::READGROUP, self::READALL))) {
+         $planning_types['group_users'] = __('All users of a group');
+         $planning_types['group']       = __('Group');
+      }
+
       Dropdown::showFromArray('planning_type',
-                              array('user'        => __("User"),
-                                    'group_users' => __('All users of a group'),
-                                    'group'       => __('Group')),
+                              $planning_types,
                               array('display_emptychoice' => true,
                                     'rand'                =>  $rand));
       echo Html::scriptBlock("
@@ -1265,9 +1312,23 @@ class Planning extends CommonGLPI {
          }
       }
       echo __("User")." :<br>";
-      User::dropdown(array('entity' => $_SESSION['glpiactive_entity'],
-                           'right'  => 'planning',
-                           'used'   => $used));
+
+      // show only users with right to add planning events
+      $rights = array('change', 'problem', 'reminder', 'task', 'projecttask');
+      // Can we see only personnal planning ?
+      if (!Session::haveRightsOr('planning', array(self::READALL, self::READGROUP))) {
+         $rights = 'id';
+      }
+      // Can we see user of my groups ?
+      if (Session::haveRight('planning', self::READGROUP)
+          && !Session::haveRight('planning', self::READALL)) {
+         $rights = 'groups';
+      }
+
+      User::dropdown(array('entity'      => $_SESSION['glpiactive_entity'],
+                           'entity_sons' => $_SESSION['glpiactive_entity_recursive'],
+                           'right'       => $rights,
+                           'used'        => $used));
       echo "<br /><br />";
       echo Html::hidden('action', array('value' => 'send_add_user_form'));
       echo Html::submit(_sx('button', 'Add'));
@@ -1281,7 +1342,7 @@ class Planning extends CommonGLPI {
     */
    static function sendAddUserForm($params = array()) {
       $_SESSION['glpi_plannings']['plannings']["user_".$params['users_id']]
-         = array('color'   => self::$palette_bg[$_SESSION['glpi_plannings_color_index']],
+         = array('color'   => self::getPaletteColor('bg', $_SESSION['glpi_plannings_color_index']),
                  'display' => true,
                  'type'    => 'user');
       self::savePlanningsInDB();
@@ -1297,7 +1358,16 @@ class Planning extends CommonGLPI {
     */
    static function showAddGroupUsersForm() {
       echo __("Group")." : <br>";
-      Group::dropdown(array('entity' => $_SESSION['glpiactive_entity']));
+
+      $condition = "is_task = 1";
+      // filter groups
+      if (!Session::haveRight('planning', self::READALL)) {
+         $condition.= " AND id IN(".implode(',', $_SESSION['glpigroups']).")";
+      }
+
+      Group::dropdown(array('entity'      => $_SESSION['glpiactive_entity'],
+                            'entity_sons' => $_SESSION['glpiactive_entity_recursive'],
+                            'condition'   => $condition));
       echo "<br /><br />";
       echo Html::hidden('action', array('value' => 'send_add_group_users_form'));
       echo Html::submit(_sx('button', 'Add'));
@@ -1328,7 +1398,8 @@ class Planning extends CommonGLPI {
          // do not add an already set user
          if (!isset($_SESSION['glpi_plannings']['plannings']['user_'.$user_data['id']])) {
             $current_group['users']['user_'.$user_data['id']]
-               = array('color'   => self::$palette_bg[$_SESSION['glpi_plannings_color_index']],
+               = array('color'   => self::getPaletteColor('bg',
+                                                          $_SESSION['glpi_plannings_color_index']),
                        'display' => true,
                        'type'    => 'user');
             $_SESSION['glpi_plannings_color_index']++;
@@ -1373,9 +1444,17 @@ class Planning extends CommonGLPI {
     * @return Nothing (display function)
     */
    static function showAddGroupForm($params = array()) {
+
+      $condition = "is_task = 1";
+      // filter groups
+      if (!Session::haveRight('planning', self::READALL)) {
+         $condition.= " AND id IN(".implode(',', $_SESSION['glpigroups']).")";
+      }
+
       echo __("Group")." : <br>";
-      Group::dropdown(array('entity'    => $_SESSION['glpiactive_entity'],
-                            'condition' => "is_task = 1"));
+      Group::dropdown(array('entity'      => $_SESSION['glpiactive_entity'],
+                            'entity_sons' => $_SESSION['glpiactive_entity_recursive'],
+                            'condition'   => $condition));
       echo "<br /><br />";
       echo Html::hidden('action', array('value' => 'send_add_group_form'));
       echo Html::submit(_sx('button', 'Add'));
@@ -1391,7 +1470,8 @@ class Planning extends CommonGLPI {
     */
    static function sendAddGroupForm($params = array()) {
       $_SESSION['glpi_plannings']['plannings']["group_".$params['groups_id']]
-         = array('color'   => self::$palette_bg[$_SESSION['glpi_plannings_color_index']],
+         = array('color'   => self::getPaletteColor('bg',
+                                                    $_SESSION['glpi_plannings_color_index']),
                  'display' => true,
                  'type'    => 'group');
       self::savePlanningsInDB();
@@ -1711,7 +1791,8 @@ class Planning extends CommonGLPI {
          $users_id = (isset($event['users_id_tech']) && !empty($event['users_id_tech'])?
                         $event['users_id_tech']:
                         $event['users_id']);
-         $content = Planning::displayPlanningItem($event, $users_id, 'in', true);
+         $content = Planning::displayPlanningItem($event, $users_id, 'in', false);
+         $tooltip = Planning::displayPlanningItem($event, $users_id, 'in', true);
 
          $begin = date('c', strtotime($event['begin']));
          $end = date('c', strtotime($event['end']));
@@ -1726,6 +1807,7 @@ class Planning extends CommonGLPI {
          $index_color = array_search("user_$users_id", array_keys($_SESSION['glpi_plannings']));
          $events[] = array('title'       => $event['name'],
                            'content'     => $content,
+                           'tooltip'     => $tooltip,
                            'start'       => $begin,
                            'end'         => $end,
                            'editable'    => isset($event['editable'])?$event['editable']:false,
@@ -1733,11 +1815,11 @@ class Planning extends CommonGLPI {
                                              Planning::$palette_bg[$index_color]:
                                              $event['color']),
                            'borderColor' => (empty($event['event_type_color'])?
-                                             self::$palette_ev[$event['itemtype']]:
+                                             self::getPaletteColor('ev', $event['itemtype']):
                                              $event['event_type_color']),
                            'textColor'   => Planning::$palette_fg[$index_color],
                            'typeColor'   => (empty($event['event_type_color'])?
-                                             self::$palette_ev[$event['itemtype']]:
+                                             self::getPaletteColor('ev', $event['itemtype']):
                                              $event['event_type_color']),
                            'url'         => isset($event['url'])?$event['url']:"",
                            'ajaxurl'     => isset($event['ajaxurl'])?$event['ajaxurl']:"",
@@ -1980,7 +2062,8 @@ class Planning extends CommonGLPI {
       $end    = time()+MONTH_TIMESTAMP*12;
       $begin  = date("Y-m-d H:i:s", $begin);
       $end    = date("Y-m-d H:i:s", $end);
-      $params = array('who'       => $who,
+      $params = array('genical'   => true,
+                      'who'       => $who,
                       'who_group' => $who_group,
                       'whogroup'  => $who_group,
                       'begin'     => $begin,

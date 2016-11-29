@@ -277,6 +277,9 @@ class User extends CommonDBTM {
       }
    }
 
+   static public function unsetUndisclosedFields(&$fields) {
+      unset($fields['password']);
+   }
 
    function pre_deleteItem() {
       global $DB;
@@ -3267,7 +3270,7 @@ class User extends CommonDBTM {
                         'right'               => $p['right'],
                         'on_change'           => $p['on_change'],
                         'used'                => $p['used'],
-                        'entity_restrict'     => $p['entity'],
+                        'entity_restrict'     => (is_array($p['entity']) ? json_encode(array_values($p['entity'])) : $p['entity']),
                         'specific_tags'       => $p['specific_tags']);
 
       $output   = Html::jsAjaxDropdown($p['name'], $field_id,
@@ -4110,9 +4113,10 @@ class User extends CommonDBTM {
                          'post-only' => 'postonly');
       $default_password_set = array();
 
-      $crit = array('FIELDS'    => array('name', 'password'),
-                    'is_active' => 1,
-                    'name'      => array_keys($passwords));
+      $crit = array('FIELDS'     => array('name', 'password'),
+                    'is_active'  => 1,
+                    'is_deleted' => 0,
+                    'name'       => array_keys($passwords));
 
       foreach ($DB->request('glpi_users', $crit) as $data) {
          if (Auth::checkPassword($passwords[$data['name']], $data['password'])) {

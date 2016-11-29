@@ -785,17 +785,13 @@ abstract class CommonITILTask  extends CommonDBTM {
          return;
       }
 
-      if (!isset($options['color'])) {
-         $options['color'] = '';
-      }
-
-      if (!isset($options['event_type_color'])) {
-         $options['event_type_color'] = '';
-      }
-
-      if (!isset($options['display_done_events'])) {
-         $options['display_done_events'] = true;
-      }
+      $default_options = array(
+         'genical'             => false,
+         'color'               => '',
+         'event_type_color'    => '',
+         'display_done_events' => true,
+      );
+      $options = array_merge($default_options, $options);
 
       $who       = $options['who'];
       $who_group = $options['who_group'];
@@ -807,7 +803,8 @@ abstract class CommonITILTask  extends CommonDBTM {
       $ASSIGN = "";
 
       if ($who_group === "mine") {
-         if (count($_SESSION["glpigroups"])) {
+         if (!$options['genical']
+             && count($_SESSION["glpigroups"])) {
             $groups = implode("','",$_SESSION['glpigroups']);
             $ASSIGN = "`".$item->getTable()."`.`users_id_tech`
                            IN (SELECT DISTINCT `users_id`
@@ -878,7 +875,8 @@ abstract class CommonITILTask  extends CommonDBTM {
 
       if ($DB->numrows($result) > 0) {
          for ($i=0 ; $data=$DB->fetch_assoc($result) ; $i++) {
-            if ($item->getFromDB($data["id"])) {
+            if ($item->getFromDB($data["id"])
+                && $item->canViewItem()) {
                if ($parentitem->getFromDBwithData($item->fields[$parentitem->getForeignKeyField()],0)) {
                   $key = $data["begin"]."$$$".$itemtype."$$$".$data["id"];
                   $interv[$key]['color']            = $options['color'];
@@ -1059,7 +1057,7 @@ abstract class CommonITILTask  extends CommonDBTM {
    function showInObjectSumnary(CommonITILObject $item, $rand, $showprivate=false) {
       global $DB, $CFG_GLPI;
 
-      $canedit = $this->canEdit($this->fields['id']);
+      $canedit = (isset($this->fields['can_edit']) && !$this->fields['can_edit']) ? false : $this->canEdit($this->fields['id']) ;
       $canview = $this->canViewItem();
 
       echo "<tr class='tab_bg_";
@@ -1466,7 +1464,7 @@ abstract class CommonITILTask  extends CommonDBTM {
          echo "<tr class='tab_bg_1'><td>"._x('Planning','Reminder')."</td><td class='center'>";
          PlanningRecall::dropdown(array('itemtype' => $this->getType(),
                                         'items_id' => $this->getID()));
-         echo "</td></tr>";
+         echo "</td><td colspan='2'></td></tr>";
       }
 
       $this->showFormButtons($options);

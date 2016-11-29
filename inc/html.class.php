@@ -558,15 +558,15 @@ class Html {
             //set title and css class
             switch ($msgtype) {
                case ERROR:
-                  $title = _('Error');
+                  $title = __('Error');
                   $class = 'err_msg';
                   break;
                case WARNING:
-                  $title = _('Warning');
+                  $title = __('Warning');
                   $class = 'warn_msg';
                   break;
                case INFO:
-                  $title = _('Information');
+                  $title = __('Information');
                   $class = 'info_msg';
                   break;
             }
@@ -578,14 +578,25 @@ class Html {
 
             $scriptblock = "
                $(document).ready(function() {
+                  var _of = window;
+                  var _at = 'right-20 bottom-20';
+                  //calculate relative dialog position
+                  $('.message_after_redirect').each(function() {
+                     var _this = $(this);
+                     if (_this.attr('aria-describedby') != 'message_after_redirect_$msgtype') {
+                        _of = _this;
+                        _at = 'right top-' + (10 + _this.outerHeight());
+                     }
+                  });
+
                   $('#message_after_redirect_$msgtype').dialog({
                      dialogClass: 'message_after_redirect $class',
                      minHeight: 40,
                      minWidth: 200,
                      position: {
                         my: 'right bottom',
-                        at: 'right-20 bottom-20',
-                        of: window,
+                        at: _at,
+                        of: _of,
                         collision: 'none'
                      },
                      autoOpen: false,
@@ -1221,7 +1232,7 @@ class Html {
 
          //fullcalendar
          $filename = "/lib/jqueryplugins/fullcalendar/locale/".
-                     $CFG_GLPI["languages"][$_SESSION['glpilanguage']][2].".js";
+                     strtolower($CFG_GLPI["languages"][$_SESSION['glpilanguage']][2]).".js";
          if (file_exists(GLPI_ROOT.$filename)) {
             echo Html::script($CFG_GLPI["root_doc"].$filename);
          }
@@ -3903,7 +3914,7 @@ class Html {
       global $CFG_GLPI;
 
       $language = $_SESSION['glpilanguage'];
-      if (!file_exists($CFG_GLPI['root_doc']."/lib/tiny_mce/langs/$language.js")) {
+      if (!file_exists(GLPI_ROOT."/lib/tiny_mce/langs/$language.js")) {
          $language = "en_GB";
       }
 

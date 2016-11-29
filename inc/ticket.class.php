@@ -351,12 +351,15 @@ class Ticket extends CommonITILObject {
       $slt = new SLT();
       if ($slt->getFromDB($slts_id)) {
          $slt->setTicketCalendar($calendars_id);
+         if ($slt->fields['type'] == SLT::TTR) {
+            $data["ttr_slalevels_id"] = SlaLevel::getFirstSltLevel($slts_id);
+         }
          // Compute due_date
          $data[$dateField]             = $slt->computeDate($date);
          $data['sla_waiting_duration'] = 0;
 
       } else {
-         $data["slalevels_id"]         = 0;
+         $data["ttr_slalevels_id"]     = 0;
          $data[$sltField]              = 0;
          $data['sla_waiting_duration'] = 0;
       }
@@ -382,14 +385,14 @@ class Ticket extends CommonITILObject {
          case SLT::TTR :
             $input['slts_ttr_id'] = 0;
             if ($delete_date) {
-               $input['time_to_own'] = '';
+               $input['due_date'] = '';
             }
             break;
 
          case SLT::TTO :
             $input['slts_tto_id'] = 0;
             if ($delete_date) {
-               $input['due_date'] = '';
+               $input['time_to_own'] = '';
             }
             break;
       }
@@ -465,12 +468,13 @@ class Ticket extends CommonITILObject {
       }
 
       // user can delete his ticket if no action on it
-      if (($this->isUser(CommonITILActor::REQUESTER, Session::getLoginUserID())
-           || ($this->fields["users_id_recipient"] === Session::getLoginUserID()))
-          && ($this->numberOfFollowups() == 0)
-          && ($this->numberOfTasks() == 0)
-          && ($this->fields["date"] == $this->fields["date_mod"])) {
-         return true;
+      if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk"
+          && (!($this->isUser(CommonITILActor::REQUESTER, Session::getLoginUserID())
+               || $this->fields["users_id_recipient"] === Session::getLoginUserID())
+             || $this->numberOfFollowups() > 0
+             || $this->numberOfTasks() > 0
+             || $this->fields["date"] != $this->fields["date_mod"])) {
+         return false;
       }
 
       return static::canDelete();
@@ -1463,7 +1467,7 @@ class Ticket extends CommonITILObject {
             $input[$field] = 0;
          }
       }
-      if (!isset($input['itemtype']) || !($input['items_id'] > 0)) {
+      if (!isset($input['itemtype']) || !isset($input['items_id']) || !($input['items_id'] > 0)) {
          $input['itemtype'] = '';
       }
 
@@ -1904,7 +1908,7 @@ class Ticket extends CommonITILObject {
          if (count($validations_to_send)) {
             $values                = array();
             $values['tickets_id']  = $this->fields['id'];
-            if ($input['id'] != $this->fields['id']) {
+            if (isset($input['id']) && $input['id'] != $this->fields['id']) {
                $values['_ticket_add'] = true;
             }
 
@@ -4437,7 +4441,7 @@ class Ticket extends CommonITILObject {
                             Html::addConfirmationOnAction(__('Confirm the final deletion?')).">";
                   }
                } else {
-                  if (self::canDelete()) {
+                  if ($this->canDeleteItem()) {
                      echo "<input type='submit' class='submit' name='delete' value='".
                             _sx('button', 'Put in dustbin')."'>";
                   }
@@ -6297,7 +6301,7 @@ class Ticket extends CommonITILObject {
     * @param $rand
    **/
    function showTimeline($rand) {
-      global $CFG_GLPI, $DB;
+      global $CFG_GLPI, $DB, $autolink_options;
 
       //get ticket actors
       $ticket_users_keys = $this->getTicketActors();
@@ -6306,8 +6310,9 @@ class Ticket extends CommonITILObject {
       $group             = new Group();
       $followup_obj      = new TicketFollowup();
       $pics_url          = $CFG_GLPI['root_doc']."/pics/timeline";
-
       $timeline          = $this->getTimelineItems();
+
+      $autolink_options['strip_protocols'] = false;
 
       //display timeline
       echo "<div class='timeline_history'>";
@@ -6337,7 +6342,11 @@ class Ticket extends CommonITILObject {
          }
          Plugin::doHook('pre_show_item', array('item' => &$obj, 'options' => &$options));
 
-         $item_i = $item['item'];
+         if( is_array( $obj ) ){
+            $item_i = $obj['item'];
+         } else {
+            $item_i = $obj->fields;
+         }
 
          $date = "";
          if (isset($item_i['date'])) {

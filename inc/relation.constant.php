@@ -230,7 +230,7 @@ $RELATION = array("glpi_authldaps"
                                  'glpi_solutiontemplates'               => 'entities_id',
                                  'glpi_solutiontypes'                   => 'entities_id',
                                  'glpi_taskcategories'                  => 'entities_id',
-                                 'glpi_taskemplates'                    => 'entities_id',
+                                 'glpi_tasktemplates'                   => 'entities_id',
                                  'glpi_suppliers'                       => 'entities_id',
                                  'glpi_taskcategories'                  => 'entities_id',
                                  'glpi_ticketrecurrents'                => 'entities_id',
@@ -469,7 +469,8 @@ $RELATION = array("glpi_authldaps"
 
                   "glpi_slalevels"
                         => array('glpi_slalevelactions'   => 'slalevels_id',
-                                 'glpi_tickets'           => 'slalevels_id',
+                                 'glpi_slalevelcriterias' => 'slalevels_id',
+                                 'glpi_tickets'           => 'ttr_slalevels_id',
                                  'glpi_slalevels_tickets' => 'slalevels_id'),
 
                   "glpi_slts"
