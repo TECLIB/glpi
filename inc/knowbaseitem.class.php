@@ -58,6 +58,7 @@ class KnowbaseItem extends CommonDBTM {
    const KNOWBASEADMIN = 1024;
    const READFAQ       = 2048;
    const PUBLISHFAQ    = 4096;
+   const COMMENTS      = 8192;
 
    static $rightname   = 'knowbase';
 
@@ -143,6 +144,14 @@ class KnowbaseItem extends CommonDBTM {
                   && $this->haveVisibilityAccess()));
    }
 
+   /**
+    * Check if current user can comment on KB entries
+    *
+    * @return boolean
+    */
+   public function canComment() {
+      return $this->canViewItem() && Session::haveRight(self::$rightname, self::COMMENTS);
+   }
 
    /**
     * Get the search page URL for the current classe
@@ -174,6 +183,7 @@ class KnowbaseItem extends CommonDBTM {
       $this->addStandardTab('KnowbaseItemTranslation', $ong, $options);
       $this->addStandardTab('Log', $ong, $options);
       $this->addStandardTab('KnowbaseItem_Revision',$ong, $options);
+      $this->addStandardTab('KnowbaseItem_Comment',$ong, $options);
 
       return $ong;
    }
@@ -1946,6 +1956,7 @@ class KnowbaseItem extends CommonDBTM {
          $values = parent::getRights();
          $values[self::KNOWBASEADMIN] = __('Knowledge base administration');
          $values[self::PUBLISHFAQ]    = __('Publish in the FAQ');
+         $values[self::COMMENTS]      = __('Comment KB entries');
       }
       $values[self::READFAQ]       = __('Read the FAQ');
       return $values;
