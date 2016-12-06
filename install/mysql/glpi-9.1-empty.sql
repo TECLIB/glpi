@@ -263,6 +263,22 @@ CREATE TABLE `glpi_budgettypes` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
+### Dump table glpi_businesscriticities
+
+DROP TABLE IF EXISTS `glpi_businesscriticities`;
+CREATE TABLE `glpi_businesscriticities` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `comment` text COLLATE utf8_unicode_ci,
+  `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`),
+  KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
 ### Dump table glpi_calendars
 
 DROP TABLE IF EXISTS `glpi_calendars`;
@@ -2638,6 +2654,7 @@ CREATE TABLE `glpi_infocoms` (
   `date_mod` datetime DEFAULT NULL,
   `date_creation` datetime DEFAULT NULL,
   `decommission_date` datetime DEFAULT NULL,
+  `businesscriticities_id` int(11) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unicity` (`itemtype`,`items_id`),
   KEY `buy_date` (`buy_date`),
@@ -2647,7 +2664,8 @@ CREATE TABLE `glpi_infocoms` (
   KEY `entities_id` (`entities_id`),
   KEY `is_recursive` (`is_recursive`),
   KEY `date_mod` (`date_mod`),
-  KEY `date_creation` (`date_creation`)
+  KEY `date_creation` (`date_creation`),
+  KEY `businesscriticities_id` (`businesscriticities_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
