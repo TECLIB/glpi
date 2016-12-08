@@ -191,27 +191,27 @@ class KnowbaseItem_ItemTest extends DbTestCase {
        $kb1 = getItemByTypeName(KnowbaseItem::getType(), '_knowbaseitem01');
 
        $name = $kb_item->getTabNameForItem($kb1, true);
-       $this->assertEquals('Linked items <sup class=\'tab_nb\'>3</sup>', $name);
+       $this->assertEquals('Associated elements <sup class=\'tab_nb\'>3</sup>', $name);
 
        $_SESSION['glpishow_count_on_tabs'] = 1;
        $name = $kb_item->getTabNameForItem($kb1);
-       $this->assertEquals('Linked items <sup class=\'tab_nb\'>3</sup>', $name);
+       $this->assertEquals('Associated elements <sup class=\'tab_nb\'>3</sup>', $name);
 
        $_SESSION['glpishow_count_on_tabs'] = 0;
        $name = $kb_item->getTabNameForItem($kb1);
-       $this->assertEquals('Linked items', $name);
+       $this->assertEquals('Associated elements', $name);
 
        $ticket3 = getItemByTypeName(Ticket::getType(), '_ticket03');
 
        $_SESSION['glpishow_count_on_tabs'] = 1;
        $name = $kb_item->getTabNameForItem($ticket3, true);
-       $this->assertEquals('Knowledge base items <sup class=\'tab_nb\'>2</sup>', $name);
+       $this->assertEquals('Knowledge base <sup class=\'tab_nb\'>2</sup>', $name);
 
        $name = $kb_item->getTabNameForItem($ticket3);
-       $this->assertEquals('Knowledge base items <sup class=\'tab_nb\'>2</sup>', $name);
+       $this->assertEquals('Knowledge base <sup class=\'tab_nb\'>2</sup>', $name);
 
        $_SESSION['glpishow_count_on_tabs'] = 0;
        $name = $kb_item->getTabNameForItem($ticket3);
-       $this->assertEquals('Knowledge base items', $name);
+       $this->assertEquals('Knowledge base', $name);
    }
 }
