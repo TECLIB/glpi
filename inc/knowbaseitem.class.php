@@ -595,7 +595,7 @@ class KnowbaseItem extends CommonDBTM {
          if (Session::getLoginUserID()) {
             $where['`glpi_groups_knowbaseitems`.`groups_id`'] = $_SESSION["glpigroups"];
             $where['`glpi_groups_knowbaseitems`.`entities_id`'] = ['<', '0'];
-            $restrict = getEntitiesRestrictCriteria('glpi_groups_knowbaseitems', '', '', true);
+            $restrict = getEntitiesRestrictCriteria('glpi_groups_knowbaseitems', '', '', true, true);
             if (count($restrict)) {
                if (isset($restrict['OR']) && count($restrict['OR'])) {
                   $where = $where + $restrict['OR'];
@@ -620,7 +620,7 @@ class KnowbaseItem extends CommonDBTM {
          if (Session::getLoginUserID()) {
             $where['`glpi_knowbaseitems_profiles`.`profiles_id`'] = $_SESSION["glpiactiveprofile"]['id'];
             $where['`glpi_knowbaseitems_profiles`.`entities_id`'] = ['<', '0'];
-            $restrict = getEntitiesRestrictCriteria('glpi_knowbaseitems_profiles', '', '', true);
+            $restrict = getEntitiesRestrictCriteria('glpi_knowbaseitems_profiles', '', '', true, true);
             if (count($restrict)) {
                if (isset($restrict['OR']) && count($restrict['OR'])) {
                   $where = $where + $restrict['OR'];
@@ -643,13 +643,15 @@ class KnowbaseItem extends CommonDBTM {
          ];
 
          if (Session::getLoginUserID()) {
-            $restrict = getEntitiesRestrictCriteria('glpi_entities_knowbaseitems', '', '', true);
+            $restrict = getEntitiesRestrictCriteria('glpi_entities_knowbaseitems', '', '', true, true);
             if (count($restrict)) {
                if (isset($restrict['OR']) && count($restrict['OR'])) {
                   $where = $where + $restrict['OR'];
                } else if (!isset($restrict['OR'])) {
                   $where = $where + $restrict;
                }
+            } else {
+               $where['`glpi_entities_knowbaseitems`.`entities_id`'] = null;
             }
          }
       }
