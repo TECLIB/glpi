@@ -295,6 +295,8 @@ abstract class CommonITILTask  extends CommonDBTM {
          }
       }
 
+      $input = $this->addFiles($input);
+
       return $input;
    }
 
@@ -367,7 +369,6 @@ abstract class CommonITILTask  extends CommonDBTM {
 
 
    function prepareInputForAdd($input) {
-
       $itemtype = $this->getItilObjectItemType();
 
       Toolbox::manageBeginAndEndPlanDates($input['plan']);
@@ -411,20 +412,15 @@ abstract class CommonITILTask  extends CommonDBTM {
          $input['is_private'] = 0;
       }
 
-      // Manage File attached (from mailgate)
-      // Pass filename if set to ticket
-      if (isset($input['_filename'])) {
-         $input["_job"]->input['_filename'] = $input['_filename'];
-      }
-      // Add docs without notif
-      $docadded = $input["_job"]->addFiles(0,1);
-
       return $input;
    }
 
 
    function post_addItem() {
       global $CFG_GLPI;
+
+      // Add document if needed, without notification
+      $this->input = $this->addFiles($this->input, ['force_update' => true]);
 
       if (isset($this->input['_planningrecall'])) {
          $this->input['_planningrecall']['items_id'] = $this->fields['id'];
@@ -1227,10 +1223,37 @@ abstract class CommonITILTask  extends CommonDBTM {
       }
       echo "<tr class='tab_bg_1'>";
       echo "<td rowspan='$rowspan' style='width:100px'>".__('Description')."</td>";
-      echo "<td rowspan='$rowspan' style='width:50%' id='content$rand_text'>".
-           "<textarea name='content' style='width: 95%; height: 160px' id='task$rand_text'>".$this->fields["content"].
-           "</textarea>";
-      echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
+      echo "<td rowspan='$rowspan' style='width:65%' id='content$rand_text'>";
+
+      $rand_text = mt_rand();
+      $content_id = "content$rand";
+
+      $cols       = 90;
+      $rows       = 6;
+
+      if ($CFG_GLPI["use_rich_text"]) {
+         $ticket = new TIcket();
+         $values["content"] = Html::setRichTextContent($content_id,
+                                                       $this->fields["content"],
+                                                       $rand);
+         $cols              = 100;
+         $rows              = 10;
+      } else {
+         $values["content"] = $this->fields["content"];
+      }
+
+      echo "<div id='content$rand_text'>";
+      echo "<textarea name='content' style='width: 95%; height: 160px' id='$content_id'>";
+      echo  $values["content"];
+      echo "</textarea>";
+      echo "</div>";
+      if ($CFG_GLPI["use_rich_text"]) {
+         echo Html::fileForRichText(['name'      => 'upload_rich_text',
+                                     'editor_id' => $content_id]);
+      } else {
+        echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
+      }
+
       echo "</td>";
       echo "<input type='hidden' name='$fkfield' value='".$this->fields[$fkfield]."'>";
       echo "</td></tr>\n";
@@ -1319,9 +1342,28 @@ abstract class CommonITILTask  extends CommonDBTM {
 
       echo "</td></tr>\n";
 
-      if ($ID <= 0) {
-         Document_Item::showSimpleAddForItem($item);
+      if (!$CFG_GLPI["use_rich_text"]) {
+         echo "<tr class='tab_bg_1'>";
+         echo "<td>";
+         echo "</td>";
+         echo "<td colspan='1'>";
+         echo Html::file(array('multiple'          => true,
+                               'showfilecontainer' => 'fileupload_info'
+                               ));
+         echo "</td>";
+         echo "<td>";
+         echo "</td>";
+         echo "</tr>";
       }
+
+      echo "<td class='top'>".sprintf(__('%1$s (%2$s)'), __('File'), Document::getMaxUploadSize());
+      DocumentType::showAvailableTypesLink();
+      echo "</td>";
+      echo "<td class='top'>";
+      echo "<div id='fileupload_info'></div>";
+      echo "</td>";
+      echo "</tr>";
+
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__('By')."</td>";
       echo "<td colspan='2'>";

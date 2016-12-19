@@ -1119,7 +1119,6 @@ class Html {
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/rateit/rateit.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/select2/select2.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/qtip2/jquery.qtip.min.css");
-      echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jcrop/jquery.Jcrop.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/spectrum-colorpicker/spectrum.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jquery-gantt/css/style.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/fullcalendar/fullcalendar.min.css",
@@ -1193,8 +1192,6 @@ class Html {
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jquery-ui-timepicker-addon/jquery-ui-timepicker-addon.min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jquery-file-upload/js/jquery.iframe-transport.min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jquery-file-upload/js/jquery.fileupload.min.js");
-      echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jcrop/jquery.Jcrop.min.js");
-      echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/imagepaste/jquery.image_paste.min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/spectrum-colorpicker/spectrum-min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jquery-gantt/js/jquery.fn.gantt.min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/autogrow/jquery.autogrow-textarea.min.js");
@@ -3844,15 +3841,17 @@ class Html {
          relative_urls: false,
          remove_script_host: false,
          entity_encoding: 'raw',
+         paste_data_images: true,
          menubar: false,
          statusbar: false,
          skin: 'light',
          plugins: [
-            'table directionality searchreplace paste',
-            'tabfocus autoresize link image',
-            'code fullscreen'
+            'table directionality searchreplace',
+            'tabfocus autoresize link image paste',
+            'code fullscreen paste_upload_doc'
          ],
          toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image code fullscreen',
+
       });
    ";
 
@@ -3864,38 +3863,51 @@ class Html {
    }
 
    /**
-    * Init the Image paste System for tiny mce
+    * Convert rich text content to simple text content
     *
     * @since version 0.85
     *
-    * @param $name          name of the html textarea to use
-    * @param $rand          rand of the html textarea to use
+    * @param $content : content to convert in html
     *
-    * @return nothing
+    * @return $content
    **/
-   static function initImagePasteSystem($name, $rand) {
-      global $CFG_GLPI;
+   static function setSimpleTextContent($content) {
 
-      echo Html::imagePaste(array('rand' => $rand));
+      $content = Html::entity_decode_deep($content);
 
-      $params = array('name'         => $name,
-                      'filename'     => self::generateImageName(),
-                      'root_doc'     => $CFG_GLPI['root_doc'],
-                      'rand'         => $rand,
-                      'showfilesize' => 1,
-                      'lang'         => array('pasteimage'   => _sx('button',
-                                                                    'Drag and drop or paste image'),
-                                              'itemnotfound' => __('Item not found'),
-                                              'toolarge'     => __('Item is too large'),
-                                              'save'         => _sx('button', 'Save'),
-                                              'cancel'       => _sx('button', 'Cancel')));
+      // If is html content
+      if ($content != strip_tags($content)) {
+         $content = Html::clean(Toolbox::convertImageToTag($content), false, 1);
+         $content = Html::entity_decode_deep(Html::clean(Toolbox::convertImageToTag($content)));
+      }
 
-      return html::scriptBlock("if (!tinyMCE.isIE || tinymce.Env.ie >= 10) { // Chrome, Firefox plugin, Internet explorer >= 10
-                  tinyMCE.imagePaste = $(document).imagePaste(".json_encode($params).");
-              } else { // IE plugin
-                  tinyMCE.imagePaste = $(document).IE_support_imagePaste(".json_encode($params).");
-              }
-              uploadFile$rand();");
+      return $content;
+   }
+
+   /**
+    * Convert simple text content to rich text content and init html editor
+    *
+    * @since version 0.85
+    *
+    * @param $name       name of textarea
+    * @param $content    content to convert in html
+    * @param $rand
+    *
+    * @return $content
+   **/
+   static function setRichTextContent($name, $content, $rand) {
+
+      // Init html editor
+      Html::initEditorSystem($name, $rand);
+
+      // Neutralize non valid HTML tags
+      $content = html::clean($content, false, 1);
+
+      // If content does not contain <br> or <p> html tag, use nl2br
+      if (!preg_match("/<br\s?\/?>/", $content) && !preg_match("/<p>/", $content)) {
+         $content = nl2br($content);
+      }
+      return $content;
    }
 
 
@@ -4964,6 +4976,49 @@ class Html {
    }
 
    /**
+    * Display a div who reveive a list of uploaded file
+    * @param  array  $options theses follwoing keys:
+    *                          - name (default upload_rich_text)
+    *                          - editor_id the dom id of the tinymce editor
+    * @return string The Html
+    */
+   static function fileForRichText($options=array()){
+      $p['name']      = 'upload_rich_text';
+      $p['editor_id'] = '';
+
+      if (is_array($options) && count($options)) {
+         foreach ($options as $key => $val) {
+            $p[$key] = $val;
+         }
+      }
+
+      $out = __('Attach file by dragging & dropping or copy & paste or ').
+            "<a href='' id='upload_link'>".__('selecting them')."</a>".
+            "<input id='{$p['name']}' type='file' />";
+
+      $out .= Html::scriptBlock("
+         $(function(){
+            $('#upload_link').on('click', function(e){
+               e.preventDefault();
+               $('#{$p['name']}:hidden').trigger('click');
+            });
+         });
+
+         var fileindex = 0;
+         $(function() {
+            $('#{$p['name']}:hidden').change(function () {
+               insertImageInTinyMCE(tinyMCE.get('{$p['editor_id']}'),
+                                    $('#{$p['name']}:hidden')[0].files[0]);
+            });
+         });
+      ");
+
+      return $out;
+
+   }
+
+
+   /**
     * Creates an input file field. Send file names in _$name field as array.
     * Files are uploaded in files/_tmp/ directory
     *
@@ -5010,11 +5065,12 @@ class Html {
       }
 
       //echo "<input type='file' name='filename' value='".$this->fields["filename"]."' size='39'>";
-      $out  = "<div class='fileupload' id='".$p['dropZone']."'>";
+      $out  = "<div class='fileupload' id='{$p['dropZone']}'>";
       $out .= "<span class='b'>".__('Drag and drop your file here, or').'</span><br>';
-      $out .= "<input id='fileupload$randupload' type='file' name='".$p['name']."[]' data-url='".
-                $CFG_GLPI["root_doc"]."/front/fileupload.php?name=".$p['name'].
-                "&amp;showfilesize=".$p['showfilesize']."'>";
+      $out .= "<input id='fileupload$randupload' type='file' name='".$p['name']."[]'
+                      data-url='".$CFG_GLPI["root_doc"]."/ajax/fileupload.php'
+                      data-form-data='{\"name\": \"".$p['name']."\",
+                                       \"showfilesize\": \"".$p['showfilesize']."\"}'>>";
       if ($addshowfilecontainer) {
          $out .= "<div id='".$p['showfilecontainer']."'></div>";
       }
@@ -5027,50 +5083,6 @@ class Html {
 
       return $out;
    }
-
-   /**
-    * imagePaste : Show image paste for an item, with TinyMce
-    *
-    * @since version 0.85
-    *
-    * @param $options       array of options
-    *     - name              string   field name (default filename)
-    *     - multiple          boolean  allow multiple file upload (default false
-    *     - onlyimages        boolean  restrict to image files (default false)
-    *     - showfilecontainer string   DOM ID of the container showing file uploaded:
-    *                                  use selector to display
-    *     - imagePaste        boolean  image paste with tinyMce
-    *     - dropZone          string   DOM ID of the drop zone
-    *     - rand              string   already computed rand value
-    *     - pasteZone         string   DOM ID of the paste zone
-    *
-    * @return nothing (print the image paste)
-   **/
-   static function imagePaste($options=array()) {
-
-      $rand = mt_rand();
-
-      $p['name']              = 'stock_image';
-      $p['multiple']          = true;
-      $p['onlyimages']        = true;
-      $p['showfilecontainer'] = 'fileupload_info';
-      $p['imagePaste']        = 1;
-      $p['dropZone']          = 'image_paste';
-      $p['rand']              = $rand;
-
-      if (is_array($options) && count($options)) {
-         foreach ($options as $key => $val) {
-            $p[$key] = $val;
-         }
-      }
-
-      echo '<script type="text/javascript">';
-      echo Html::fileScript($p);
-      echo '</script>';
-
-      echo "<div class='fileupload' id='".$p['dropZone']."'></div>\n";
-   }
-
 
    /**
     * fileScript : file upload script
@@ -5111,33 +5123,27 @@ class Html {
          }
       }
 
-      $script = "fileindex".$p['rand']." = 0;
-         function uploadFile".$p['rand']."() {
-            $('#fileupload".$p['rand']."').fileupload({
+      $script = "fileindex{$p['rand']} = 0;
+         function uploadFile{$p['rand']}() {
+            $('#fileupload{$p['rand']}').fileupload({
                //forceIframeTransport: true,
                //replaceFileInput: false,
-               dataType: 'json',";
-      if ($p['pasteZone'] != false) {
-         $script .= "pasteZone : $('#".$p['pasteZone']."'),";
-      } else if (!$p['imagePaste']) {
-         $script .= "pasteZone : false,";
-      }
-      if ($p['dropZone'] != false) {
-         $script .= "dropZone : $('#".$p['dropZone']."'),";
-      } else {
-         $script .= "dropZone : false,";
-      }
-      if ($p['onlyimages']) {
-         $script .= "acceptFileTypes: '/(\.|\/)(gif|jpe?g|png)$/i',";
-      }
-      $script .= "   progressall: function (e, data) {
-                        var progress = parseInt(data.loaded / data.total * 100, 10);
-                        $('#progress".$p['rand']."').show();
-                        $('#progress".$p['rand']." .uploadbar').css({
-                              'width':progress + '%'
-                        });
-                        $('#progress".$p['rand']." .uploadbar').text(progress + '%').show().delay(5000).fadeOut('slow');
-                  },
+               dataType: 'json',
+               pasteZone: ".($p['pasteZone'] !== false ? "$('#{$p['pasteZone']}')": "false").",
+               dropZone:  ".($p['dropZone'] !== false  ? "$('#{$p['dropZone']}')" : "false").",
+               acceptFileTypes: ".($p['onlyimages'] ? "'/(\.|\/)(gif|jpe?g|png)$/i'" : "undefined").",
+               progressall: function (e, data) {
+                  var progress = parseInt(data.loaded / data.total * 100, 10);
+                  $('#progress{$p['rand']}').show();
+                  $('#progress{$p['rand']} .uploadbar').css({
+                     'width':progress + '%'
+                  });
+                  $('#progress{$p['rand']} .uploadbar')
+                     .text(progress + '%')
+                     .show()
+                     .delay(5000)
+                     .fadeOut('slow');
+               },
                send: function (e, data) {
                   if (1==".(($p['imagePaste'])?1:0)."
                      && tinyMCE != undefined
@@ -5146,8 +5152,9 @@ class Html {
                      && tinyMCE.imagePaste.stockimage == undefined) {
 
                      if (!tinyMCE.isIE) {
+                        //Convert the blob from clipboard to base64
                         var reader = new FileReader();
-                        reader.readAsDataURL(data.originalFiles[0]);//Convert the blob from clipboard to base64
+                        reader.readAsDataURL(data.originalFiles[0]);
                         reader.onloadend = function(e){
                            $('#desc_paste_image').html(e.target.result);
                            tinyMCE.imagePaste.processpaste($('#desc_paste_image'),
@@ -5164,28 +5171,30 @@ class Html {
                      $.ajax({
                         type: 'POST',
                         url: '".$CFG_GLPI['root_doc']."/ajax/getFileTag.php',
-                        data: {'data':data.result.".$p['name']."},
+                        data: {'data':data.result.{$p['name']}},
                         dataType: 'JSON',
                         success: function(tag){
-                           $.each(filedata.result.".$p['name'].", function (index, file) {
-                              if (file.error == undefined) {\n
-                                 displayUploadedFile".$p['rand']."(file,tag[index]);
+                           $.each(filedata.result.{$p['name']}, function (index, file) {
+                              if (file.error == undefined) {
+                                 displayUploadedFile{$p['rand']}(file,tag[index]);
                                  ";
       if ($p['imagePaste']) {
          $script.= "             // Insert tag in textarea
-                                 if (tinyMCE != undefined) {\n
-                                    tinyMCE.activeEditor.execCommand('mceInsertContent', false, '<p>'+tag[index].tag+'</p>');\n
+                                 if (tinyMCE != undefined) {
+                                    tinyMCE.activeEditor.execCommand('mceInsertContent', false,
+                                                                     '<p>'+tag[index].tag+'</p>');
                                     if (tinyMCE.imagePaste != undefined) {
                                        tinyMCE.imagePaste.pasteddata = undefined;
                                        tinyMCE.imagePaste.stockimage = undefined;
                                     }
-                                 }\n";
+                                 }";
       }
-      $script.="                 $('#progress".$p['rand']." .uploadbar').text('".__('Upload successful')."');\n
-                                 $('#progress".$p['rand']." .uploadbar').css('width', '100%');\n
-                              } else {\n
-                                 $('#progress".$p['rand']." .uploadbar').text(file.error);\n
-                                 $('#progress".$p['rand']." .uploadbar').css('width', '100%');\n
+      $script.="                 $('#progress{$p['rand']} .uploadbar')
+                                    .text('".__('Upload successful')."');
+                                 $('#progress{$p['rand']} .uploadbar').css('width', '100%');
+                              } else {
+                                 $('#progress{$p['rand']} .uploadbar').text(file.error);
+                                 $('#progress{$p['rand']} .uploadbar').css('width', '100%');
                               }
                            });
                         }
@@ -5193,55 +5202,72 @@ class Html {
 
                }
             });
-         };\n
-         function displayUploadedFile".$p['rand']."(file, tag){
-            var p = $('<p/>').attr('id',file.id).html('<b>".__('File')." : </b>'+file.display+' <b>".__('Tag')." : </b>'+tag.tag+' ').appendTo('#".$p['showfilecontainer']."');\n
-            var p2 = $('<p/>').attr('id',file.id+'2').css({'display':'none'}).appendTo('#".$p['showfilecontainer']."');\n
+         };
+         function displayUploadedFile{$p['rand']}(file, tag){
+            var p = $('<p/>').attr('id',file.id)
+               .html('<b>".__('File')." : </b>'+file.display+' <b>".__('Tag')." : </b>'+tag.tag+' ')
+               .appendTo('#{$p['showfilecontainer']}');
+            var p2 = $('<p/>')
+               .attr('id',file.id+'2')
+               .css({'display':'none'})
+               .appendTo('#".$p['showfilecontainer']."');
 
             // File
-            $('<input/>').attr('type', 'hidden').attr('name', '_".$p['name']."['+fileindex".$p['rand']."+']').attr('value',file.name).appendTo(p);\n
+            $('<input/>')
+               .attr('type', 'hidden')
+               .attr('name', '_{$p['name']}['+fileindex{$p['rand']}+']')
+               .attr('value', file.name).appendTo(p);
 
             // Tag
-            $('<input/>').attr('type', 'hidden').attr('name', '_tag_".$p['name']."['+fileindex".$p['rand']."+']').attr('value', tag.name).appendTo(p);\n
+            $('<input/>')
+               .attr('type', 'hidden')
+               .attr('name', '_tag_{$p['name']}['+fileindex{$p['rand']}+']')
+               .attr('value', tag.name)
+               .appendTo(p);
 
             // Coordinates
             if (tinyMCE != undefined
                   && tinyMCE.imagePaste != undefined
                   && (tinyMCE.imagePaste.imageCoordinates != undefined || tinyMCE.imagePaste.imageCoordinates != null)) {
-               $('<input/>').attr('type', 'hidden').attr('name', '_coordinates['+fileindex".$p['rand']."+']').attr('value', encodeURIComponent(JSON.stringify(tinyMCE.imagePaste.imageCoordinates))).appendTo(p2);
+               $('<input/>')
+                  .attr('type', 'hidden')
+                  .attr('name', '_coordinates['+fileindex{$p['rand']}+']')
+                  .attr('value', encodeURIComponent(JSON.stringify(tinyMCE.imagePaste.imageCoordinates)))
+                  .appendTo(p2);
                tinyMCE.imagePaste.imageCoordinates = null;
             }
 
             // Delete button
             var elementsIdToRemove = {0:file.id, 1:file.id+'2'};
-            $('<img src=\"".$CFG_GLPI['root_doc']."/pics/delete.png\" class=\"pointer\">').click(function(){\n
-               deleteImagePasted(elementsIdToRemove, tag.tag);\n
-            }).appendTo(p);\n
+            $('<img src=\"{$CFG_GLPI['root_doc']}/pics/delete.png\" class=\"pointer\">')
+               .click(function() {
+               deleteImagePasted(elementsIdToRemove, tag.tag);
+            }).appendTo(p);
             ";
       if ($p['multiple']) {
-         $script.= "             fileindex".$p['rand']." = fileindex".$p['rand']."+1;\n";
+         $script.= "fileindex{$p['rand']} = fileindex{$p['rand']}+1;";
       }
 
       $script .= "}
-         function deleteImagePasted(elementsIdToRemove, tagToRemove){\n
+         function deleteImagePasted(elementsIdToRemove, tagToRemove){
             // Remove file display lines
-            $.each(elementsIdToRemove, function (index, id) {\n
-                $('#'+id).remove();\n
-            });\n
+            $.each(elementsIdToRemove, function (index, id) {
+                $('#'+id).remove();
+            });
             ";
       if ($p['imagePaste']) {
          $script.= "
-               // TINYMCE : Remove tag from textarea
-               if (tinyMCE != undefined) {
-                  tinyMCE.activeEditor.setContent(tinyMCE.activeEditor.getContent().replace('<p>'+tagToRemove+'</p>', ''));\n
-               }";
+            // TINYMCE : Remove tag from textarea
+            if (tinyMCE != undefined) {
+               tinyMCE.activeEditor.setContent(tinyMCE.activeEditor.getContent().replace('<p>'+tagToRemove+'</p>', ''));
+            }";
       }
       $script.= "
             // File counter
-            if (fileindex".$p['rand']." > 0) {\n
-               fileindex".$p['rand']."--;\n
+            if (fileindex{$p['rand']} > 0) {
+               fileindex{$p['rand']}--;
             }
-         };\n";
+         };";
 
       if (is_array($p['values']) && isset($p['values']['filename'])
          && is_array($p['values']['filename']) && count($p['values']['filename'])) {
@@ -5696,7 +5722,6 @@ class Html {
     *                               (default null)
    **/
    static function jsAlertCallback( $msg, $title, $okCallback=null) {
-
       return "
          // Dialog and its properties.
          $('<div></div>').dialog({
@@ -5715,6 +5740,61 @@ class Html {
          " ;
    }
 
+
+   /**
+    * Convert tag to image
+    *
+    * @since version 9.2
+    *
+    * @param $content_text   text content of input
+    * @param $force_update   force update of content in item (false by default
+    * @param $doc_data       array of filenames and tags
+    * @param $addLink        boolean, do we need to add an anchor link
+    *
+    * @return nothing
+   **/
+   public static function convertTagFromRichTextToImageTag($tag, $width, $height, $addLink = true) {
+      global $CFG_GLPI;
+
+      $doc = new Document();
+      $doc_data = $doc->find("`tag` IN('".$tag."')");
+      $out = "";
+
+      if (count($doc_data)) {
+         foreach ($doc_data as $id => $image) {
+            // Add only image files : try to detect mime type
+            $ok       = false;
+            $mime     = '';
+            if (isset($image['filepath'])) {
+               $fullpath = GLPI_DOC_DIR."/".$image['filepath'];
+               $mime = Toolbox::getMime($fullpath);
+               $ok   = Toolbox::getMime($fullpath, 'image');
+            }
+            if (isset($image['tag'])) {
+                if ($ok || empty($mime)) {
+               // Replace tags by image in textarea
+
+                  if($addLink){
+                     $out .= '<a href="'.$CFG_GLPI['root_doc'].
+                             '/front/document.send.php?docid='.$id.
+                             '" target="_blank"><img alt="'.$image['tag'].
+                             '" height="'.$height.'" width="'.$width.
+                             '" src="'.$CFG_GLPI['root_doc'].
+                        '/front/document.send.php?docid='.$id.'" /></a>';
+                  } else{
+                     $out .= '<img alt="'.$image['tag'].
+                             '" height="'.$height.'" width="'.$width.
+                             '" src="'.$CFG_GLPI['root_doc'].
+                             '/front/document.send.php?docid='.$id.'" />';
+                  }
+               }
+            }
+         }
+         return $out;
+      }
+      return '#'.$tag.'#';
+   }
+
    /**
     * Get copyright message as HTML (used in footers)
     *
@@ -5731,5 +5811,102 @@ class Html {
          "</a>";
       return $message;
    }
-}
 
+
+ /**
+    * Convert img or tag of ticket for notification mails
+    *
+    * @since version 0.85
+    *
+    * @param $content : html content of input
+    * @param $item : item to store filenames and tags found for each image in $content
+    *
+    * @return htlm content
+   **/
+   public static function convertContentForNotification($content, $item) {
+      global $CFG_GLPI, $DB;
+
+      $html = str_replace(array('&','&amp;nbsp;'), array('&amp;',' '),
+                           html_entity_decode($content, ENT_QUOTES, "UTF-8"));
+
+      // If is html content
+      if ($CFG_GLPI["use_rich_text"]) {
+         preg_match_all('/img\s*alt=[\'|"](([a-z0-9]+|[\.\-]?)+)[\'|"]/', $html,
+                        $matches, PREG_PATTERN_ORDER);
+
+         if (isset($matches[1]) && count($matches[1])) {
+            if (count($matches[1])) {
+               foreach ($matches[1] as $image) {
+                   //Replace tags by image in textarea
+                  $img = "img src='cid:".Document::getImageTag($image)."'";
+
+                  //Replace tag by the image
+                  $html = preg_replace("/img alt=['|\"]".$image."['|\"].*src=['|\"](.+)['|\"]/", $img,
+                                          $html);
+               }
+            }
+         }
+
+         $content = $html;
+
+      // If is text content
+      } else {
+         $doc = new Document();
+         $doc_data = array();
+
+         preg_match_all('/'.Document::getImageTag('(([a-z0-9]+|[\.\-]?)+)').'/', $content,
+                        $matches, PREG_PATTERN_ORDER);
+         if (isset($matches[1]) && count($matches[1])) {
+            $doc_data = $doc->find("tag IN('".implode("','", array_unique($matches[1]))."')");
+         }
+
+         if (count($doc_data)) {
+            foreach ($doc_data as $image) {
+               // Replace tags by image in textarea
+               $img = "<img src='cid:".Document::getImageTag($image['tag'])."'/>";
+
+               // Replace tag by the image
+               $content = preg_replace('/'.Document::getImageTag($image['tag']).'/', $img,
+                                       $content);
+            }
+         }
+      }
+
+      // Get all attached documents of ticket
+      $query = "SELECT `glpi_documents_items`.`id` AS assocID,
+                       `glpi_entities`.`id` AS entity,
+                       `glpi_documents`.`name` AS assocName,
+                       `glpi_documents`.*
+                FROM `glpi_documents_items`
+                LEFT JOIN `glpi_documents`
+                  ON (`glpi_documents_items`.`documents_id`=`glpi_documents`.`id`)
+                LEFT JOIN `glpi_entities`
+                  ON (`glpi_documents`.`entities_id`=`glpi_entities`.`id`)
+                WHERE `glpi_documents_items`.`items_id` = '".$item->fields['id']."'
+                      AND `glpi_documents_items`.`itemtype` = '".$item->getType()."' ";
+
+      if (Session::getLoginUserID()) {
+         $query .= getEntitiesRestrictRequest(" AND","glpi_documents",'','',true);
+      } else {
+         // Anonymous access from Crontask
+         $query .= " AND `glpi_documents`.`entities_id`= '0' ";
+      }
+      $result = $DB->query($query);
+
+      if ($DB->numrows($result)) {
+         while ($data = $DB->fetch_assoc($result)) {
+            if (!empty($data['id'])) {
+               // Image document
+               if (!empty($data['tag'])) {
+                  $item->documents[] = $data['id'];
+               // Other document
+               } else if ($CFG_GLPI['attach_ticket_documents_to_mail']) {
+                  $item->documents[] = $data['id'];
+               }
+            }
+         }
+      }
+
+      return $content;
+   }
+}

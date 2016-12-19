@@ -1592,6 +1592,10 @@ a.icon_nav_move:hover img {
    max-width: 950px;
 }
 
+#upload_rich_text{
+   display : none;
+}
+
 
 /* ################--------------- planning  ---------------#################### */
 

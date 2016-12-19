@@ -938,3 +938,581 @@ if ($(window).width() <= 700) {
 $(function(){
    $.ui.dialog.prototype._focusTabbable = function(){};
 });
+
+
+
+/**
+ * Uploads a file receive on tinyMCE to Server
+ *
+ * @param      {FormData}             Object FormData with file (blob format inside)
+ * @param      {Object}               editor  instance of editor (TinyMCE)
+ * @param      {Boolean}              isImage
+ * @return     {String}               Tag of file
+ */
+function uploadFile(fd, editor, isImage) {
+   var returnTag = false;
+
+   $.ajax({ // JQuery Ajax
+      type: 'POST',
+      url: '../ajax/fileupload.php',
+      data: fd,
+      processData: false,
+      contentType: false,
+      dataType: 'JSON',
+      async: false,
+      success: function(data) {
+         $.each(data, function(index, element) {
+            if(element[0].error == undefined) {
+               returnTag = '';
+               var tag = getFileTag(element);
+               //if is an image add tag
+               if(isImage){
+                  returnTag = tag.tag;
+               }
+               //display uploaded file
+               displayUploadedFile(element[0], tag, isImage, editor);
+
+            } else {
+               returnTag = false;
+               alert(element[0].error);
+            }
+         });
+      },
+
+      error: function (request, status, error) {
+         alert(request.responseText);
+      }
+   });
+
+   return returnTag;
+}
+
+
+/**
+* Determines if data from drop is an image.
+*
+* @param      {Blob}   file    The file
+* @return     {boolean}  True if image, False otherwise.
+*/
+var isImage = function(file) {
+   var validimagetypes = ["image/gif", "image/jpeg","image/jpg", "image/png"];
+
+   if ($.inArray(file["type"], validimagetypes) < 0) {
+      return false;
+   } else {
+      return true;
+   }
+};
+
+
+ /**
+  * Gets the file tag.
+  *
+  * @param      {(boolean|string)}  data receive from uploadFile
+  * @return     {(boolean|string)}  The file tag.
+  */
+var getFileTag = function(data) {
+   var returnString = '';
+
+   $.ajax({
+      type: 'POST',
+      url: '../ajax/getFileTag.php',
+      data: {'data':data},
+      dataType: 'JSON',
+      async: false,
+      success: function(data) {
+         returnString = data[0];
+      },
+      error: function (request, status, error) {
+         console.log(request.responseText);
+         returnString=false;
+      }
+   });
+
+   return returnString;
+};
+
+
+/**
+ * Display list of uploaded file with their size
+ *
+ * @param      {JSON}    file       The file
+ * @param      {string}  tag        The tag
+ * @param      {Boolean} IsImage    The image
+ * @param      {Object}  editor     The TinyMCE editor instance
+ */
+var fileindex = 0;
+var displayUploadedFile = function(file, tag ,IsImage, editor) {
+   var id     = $(editor.getElement()).attr('id');
+   var form   = $('#'+id).closest('form');
+   var action = form.attr('action');
+   var div    = 'fileupload_info';
+   var rand   = Math.random();
+   var ext    = file.name.split('.').pop();
+
+   if(action == undefined
+      || action.indexOf('ticket.form.php') >= 0
+      || action.indexOf('tracking.injector.php') >= 0) {
+      div = 'fileupload_info_ticket';
+   }
+
+   var p = $('<p/>')
+            .attr('id',file.id)
+            .html(getExtIcon(ext)+'&nbsp;'+
+                  '<b>'+file.display+'</b>'+
+                  '&nbsp;('
+                  +getSize(file.size)+')&nbsp;')
+            .appendTo('#'+div);
+   var p2 = $('<p/>')
+            .attr('id',file.id+'2')
+            .css({'display':'none'})
+            .appendTo('#'+div);
+
+   // File
+   $('<input/>')
+      .attr('type', 'hidden')
+      .attr('name', '_filename['+fileindex+']')
+      .attr('value',file.name).appendTo(p);
+   // Tag
+   $('<input/>')
+      .attr('type', 'hidden')
+      .attr('name', '_tag_filename['+fileindex+']')
+      .attr('value', tag.name)
+      .appendTo(p);
+
+   // Delete button
+   var elementsIdToRemove = {0:file.id, 1:file.id+'2'};
+   $('<img src="../pics/delete.png" class="pointer">').click(function() {
+      deleteImagePasted(elementsIdToRemove, tag.tag,editor);
+   }).appendTo(p);
+
+   fileindex++;
+};
+
+/**
+ * Return a png url reprensenting an extension
+ *
+ * @param  {String} ext the extension
+ * @return {string}   an image html tag
+ */
+var getExtIcon = function(ext = '') {
+   var url = '../pics/icones/'+ext+'-dist.png';
+   if (!urlExists(url)) {
+      url = '../pics/icones/defaut-dist.png';
+   }
+   return '<img src="'+url+'" title="'+ext+'">';
+};
+
+/**
+ * Check for existence of an url
+ *
+ * @param  {String} url
+ * @return {Bool}
+ */
+var urlExists = function(url = '') {
+   var exist = false;
+
+   $.ajax({
+      'type':    'HEAD',
+      'url':     url,
+      'async':   false,
+      'success': function() {
+         exist = true;
+      },
+   });
+
+   return exist;
+};
+
+/**
+ * Format a size to the last possible unit (o, Kio, Mio, etc)
+ *
+ * @param  {integer} size
+ * @return {string}  The formated size
+ */
+var getSize = function (size) {
+   var bytes   = ['o', 'Kio', 'Mio', 'Gio', 'Tio'];
+   var lastval = '';
+   bytes.some(function(val) {
+      if (size > 1024) {
+         size = size / 1024;
+      } else {
+         lastval = val;
+         return true;
+      }
+   });
+
+   return Math.round(size * 100, 2) / 100 + lastval;
+};
+
+/**
+ * Remove image pasted or droped
+ *
+ * @param      {Array}   elementsIdToRemove  The elements identifier to remove
+ * @param      {string}  tagToRemove         The tag to remove
+ * @param      {Object}  editor              The editor
+ */
+var deleteImagePasted = function(elementsIdToRemove, tagToRemove,editor) {
+   // Remove file display lines
+   $.each(elementsIdToRemove, function (index, element) {
+      $('#'+element).remove();
+   });
+
+   editor.setContent(editor.getContent().replace('<p>'+tagToRemove+'</p>', ''));
+
+   var regex = new RegExp('#', 'g');
+   editor.dom.remove(tagToRemove.replace(regex, ''));
+};
+
+
+/**
+ * Insert an (uploaded) image in the the tinymce 'editor'
+ *
+ * @param  {Object}   TinyMCE editor instance
+ * @param  {Blob}     fileImg
+ * @param  {string}   tag
+ */
+var insertImgFromFile = function(editor, fileImg, tag) {
+   var urlCreator = window.URL || window.webkitURL;
+   var imageUrl   = urlCreator.createObjectURL(fileImg);
+   var regex      = new RegExp('#', 'g');
+   var maxHeight  = $(tinyMCE.activeEditor.getContainer()).height() - 60 ;
+   var maxWidth   = $(tinyMCE.activeEditor.getContainer()).width()  - 120;
+
+   if (window.FileReader && window.File && window.FileList && window.Blob ) {
+      var reader = new FileReader();
+      reader.onload = (function(theFile) {
+         var image    = new Image();
+         image.src    = theFile.target.result;
+         image.onload = function() {
+            // access image size here
+            var imgWidth  = this.width;
+            var imgHeight = this.height;
+            var ratio     = 0;
+
+            if(imgWidth > maxWidth){
+               ratio     = maxWidth / imgWidth; // get ratio for scaling image
+               imgHeight = imgHeight * ratio;   // Reset height to match scaled image
+               imgWidth  = imgWidth * ratio;    // Reset width to match scaled image
+            }
+
+            // Check if current height is larger than max
+            if(imgHeight > maxHeight){
+               ratio     = maxHeight / imgHeight; // get ratio for scaling image
+               imgWidth  = imgWidth * ratio;      // Reset width to match scaled image
+               imgHeight = imgHeight * ratio;     // Reset height to match scaled image
+            }
+
+            editor.execCommand('mceInsertContent', false,
+                               "<img width='"+imgWidth+"' height='"+imgHeight+"'' id='"+tag.replace(regex,'')+"' src='"+imageUrl+"'>");
+         };
+      });
+      reader.readAsDataURL(fileImg);
+
+   } else{
+      console.log('thanks to update your browser to get preview of image');
+   }
+};
+
+
+/**
+ * Replace content on tinyMCE
+ *
+ * @param {Object} editor   TinyMCE editor instance
+ * @param {String} search   The search
+ * @param {String} replace  The replace
+ */
+var replaceContent = function(editor, search, replace) {
+   if (!replace) {
+      replace = '';
+   }
+
+   var re =/\[\*\*(.*?)\*\*\]/;
+   body = editor.getContent();
+   body = body.replace(re,replace);
+   editor.setContent(body);
+};
+
+/**
+ * Sets the cursor at the end.
+ *
+ * @param  {Object}  editor TinyMCE editor instance
+ */
+var setCursorAtTheEnd = function(editor) {
+   var body = editor.getContent();
+   body +='<p> </p>';
+   editor.setContent(body);
+   editor.dom.add(editor.getBody(),'p');
+   editor.selection.select(editor.getBody(), true); // ed is the editor instance
+   editor.selection.collapse(false);
+};
+
+
+/**
+ * Convert dataURI to BLOB
+ *
+ * @param      {Object}  dataURI  The data uri
+ * @return     {Blob}    { description_of_the_return_value }
+ */
+var dataURItoBlob = function(dataURI) {
+   // convert base64/URLEncoded data component to raw binary data held in a string
+   var byteString;
+   if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+      byteString = atob(dataURI.split(',')[1]);
+   } else {
+      byteString = unescape(dataURI.split(',')[1]);
+   }
+
+   // separate out the mime component
+   var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+   // write the bytes of the string to a typed array
+   var ia = new Uint8Array(byteString.length);
+   for (var i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+   }
+
+   return new Blob([ia], {type:mimeString});
+};
+
+
+
+
+/**
+* Function to convert File object to File Reader
+*
+* @param      {String}      mimeType  The mime type
+* @param      {String}     base64    The base 64
+* @return     {FileReader}  File object
+*/
+var convertFileToFileReader = function(file) {
+   var fr = new FileReader();
+   fr.fileName = file.name;
+   fr.readAsDataURL(file);
+   return fr;
+};
+
+
+/**
+* Function to convert base64 data to File Object
+*
+* @param      {String}      mimeType  The mime type
+* @param      {String}     base64    The base 64
+* @return     {FileReader}  File object
+*/
+var convertBase64ToFileReader = function (mimeType , base64) {
+   var the_file = new Blob([window.atob(base64)], {type: mimeType, encoding: 'utf-8'});
+   var fr = new FileReader();
+
+   fr.onload = function (oFREvent) {
+      var v = oFREvent.target.result.split(',')[1]; // encoding is messed up here, so we fix it
+      v = atob(v);
+      var good_b64 = btoa(decodeURIComponent(escape(v)));
+   };
+
+   fr.fileName = 'image_paste'+ Math.floor((Math.random() * 10000000) + 1); ;
+   fr.readAsDataURL(the_file);
+
+   return fr;
+};
+
+
+/**
+* Function to check if data paste on TinyMCE is an image
+*
+* @param      String content  The img tag
+* @return     String mimeType   return mimeType of data
+*/
+var isImageFromPaste = function(content) {
+   var regex1 = new RegExp('<img src="data:image\/');
+   var regex2 = new RegExp('<img alt="" src="data:image\/');
+
+   if (content.match(regex1) || content.match(regex2)) {
+      return true;
+   } else {
+      return false;
+   }
+};
+
+/**
+* Function to check if data paste on TinyMCE is an image
+*
+* @param      String content  The img tag
+* @return     String mimeType   return mimeType of data
+*/
+var isImageBlobFromPaste = function(content) {
+   var regex3 = new RegExp('<img alt="" src="blob:');
+   var regex4 = new RegExp('<img src="blob:');
+
+   if (content.match(regex3) || content.match(regex4)) {
+      return true;
+   } else {
+      return false;
+   }
+};
+
+/**
+* Function to remove 'alt' attribute
+*
+* @param      {string}  content  The content
+* @return     {string}  content The content cleaning
+*/
+var cleanDataPasted = function(content) {
+   content = content.replace('alt=""', '');
+   return content;
+};
+
+
+/**
+* Function to extract mimeType data from img tag process bu TinyMCE
+*
+* @param      String content  The img tag
+* @return     String mimeType   return mimeType of data
+*/
+var extractMimeTypeFromImgTag = function(content) {
+   content      = extractSrcFromImgTag(content);
+   var type     = content.split(',')[0]; //data:image/png;base64
+   var mimetype = type.split(';')[0];
+   mimetype     = mimetype.split(':')[1];
+   return mimetype;
+};
+
+/**
+* Function to extract base64 data from img tag process bu TinyMCE
+*
+* @param      String content  The img tag
+* @return     String base64   return base64 data
+*/
+var extractBase64FromImgTag = function(content) {
+   content = extractSrcFromImgTag(content);
+   base64 = content.split(',')[1];
+   return base64;
+};
+
+
+
+/**
+* Function to extract src tag from img tag process bu TinyMCE
+*
+* @param      {string}  content  The img tag
+*/
+var extractSrcFromImgTag = function(content) {
+   var match = content.match(/\<img.+src\=(?:\"|\')(.+?)(?:\"|\')(?:.+?)\>/)
+   return match[1];
+};
+
+
+/**
+* Function to extract src tag from img tag process bu TinyMCE
+*
+* @param      {string}  content  The img tag
+*/
+var extractSrcFromBlobImgTag = function(content) {
+   var match = content.match(/\<img[^>]+src="(blob:http%3A\/\/[^">]+)/);
+      if(match == null) {
+         var match = content.match(/\<img[^>]+src="(blob:http:\/\/[^">]+)/);
+
+         if(match == null) {
+            var match = content.match(/\<img[^>]+src="(blob:[^">]+)/);
+         }
+      }
+
+   return match[1];
+};
+
+var insertImageInTinyMCE = function(editor, file) {
+   // set a tempory tag in mce editor
+   var state_upload = '[** UPLOADING FILE == '+file.name+' **]';
+   editor.execCommand('mceInsertContent', false, state_upload);
+
+   //Create formdata objet to upload object as file on ajax request
+   var formdata = new FormData();
+   formdata.append('filename[0]', file, file.name);
+   formdata.append('name', 'filename');
+
+   //make ajax call for upload doc
+   var tag = uploadFile(formdata, editor, isImage(file));
+
+   //replace upload state by html render of image
+   replaceContent(editor, state_upload, '');
+
+   if (tag !== false) {
+      insertImgFromFile(editor, file, tag);
+   }
+
+   //Set cursor at the end
+   setCursorAtTheEnd(editor);
+};
+
+/**
+ * Plugin for tinyMce editor who intercept paste event
+ * to check if a file upload can be proceeded
+ * @param  {[Object]} editor TinyMCE editor
+ */
+tinymce.PluginManager.add('paste_upload_doc', function(editor) {
+   var id              = $(editor.getElement()).attr('id');
+   var form            = $('#'+id).closest('form');
+   var action          = form.attr('action');
+   var editorForTicket = false;
+   var editorForOther  = false;
+   var input           = form.find("input[type=submit]")
+                           .filter("[name=add],[name=update]");
+   var myDiv           = form.find("div[id='fileupload_info']");
+   var myDivTicket     = form.find("div[id='fileupload_info_ticket']");
+
+   if (action.indexOf('ticket.form.php') >= 0
+       || action.indexOf('tracking.injector.php') >= 0) {
+      editorForTicket = true;
+   } else {
+      editorForOther = true;
+   }
+
+   if (editorForTicket && myDivTicket.length
+       || editorForOther && myDiv.length && input.length) {
+
+      editor.on('drop', function(event) {
+         if (event.dataTransfer
+             && event.dataTransfer.files.length > 0) {
+            stopEvent(event);
+            $.each(event.dataTransfer.files, function(index, element) {
+               insertImageInTinyMCE(editor, element);
+            });
+         }
+      });
+
+      editor.on('PastePreProcess', function(event) {
+         stopEvent(event);
+
+         //Check if data is an image
+         if (isImageFromPaste(event.content)) {
+            //extract base64 data
+            var base64 = extractSrcFromImgTag(event.content);
+
+            //trasnform to blob
+            var file = dataURItoBlob(base64);
+
+            insertImageInTinyMCE(editor, file);
+         } else if (isImageBlobFromPaste(event.content)) {
+            var src = extractSrcFromBlobImgTag(event.content);
+               var xhr = new XMLHttpRequest();
+               xhr.open('GET', src, true);
+               xhr.responseType = 'blob';
+               xhr.onload = function(event) {
+                  if (this.status == 200) {
+                     var file  = new Blob([this.response], {type: 'image/png'});
+                     file.name = 'image_paste'+ Math.floor((Math.random() * 10000000) + 1)+".png";
+                     insertImageInTinyMCE(editor, file);
+                  } else{
+                     console.log("paste error");
+                  }
+               };
+               xhr.send();
+         }
+      });
+   }
+});
+
+var stopEvent = function (event) {
+   event.preventDefault();
+   event.stopPropagation();
+};
