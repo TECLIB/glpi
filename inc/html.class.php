@@ -5126,6 +5126,7 @@ class Html {
                   success: function(tag) {
                      $.each(filedata.result.{$p['name']}, function(index, file) {
                         if (file.error === undefined) {
+                           //create a virtual editor to manage filelist, see displayUploadedFile()
                            var editor = {
                               targetElm: $('#fileupload{$p['rand']}')
                            };
