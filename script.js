@@ -944,18 +944,23 @@ $(function(){
 /**
  * Uploads a file receive on tinyMCE to Server
  *
- * @param      {FormData}             Object FormData with file (blob format inside)
- * @param      {Object}               editor  instance of editor (TinyMCE)
- * @param      {Boolean}              isImage
- * @return     {String}               Tag of file
+ * @param      {blob}    file           The file to upload
+ * @param      {Object}  editor         instance of editor (TinyMCE)
+ * @param      {String}  filecontainer  dom id of the file list container
  */
-function uploadFile(fd, editor, isImage) {
+function uploadFile(file, editor, filecontainer) {
    var returnTag = false;
 
-   $.ajax({ // JQuery Ajax
+   //Create formdata from file to send with ajax request
+   var formdata = new FormData();
+   formdata.append('filename[0]', file, file.name);
+   formdata.append('name', 'filename');
+
+   // upload file with ajax
+   $.ajax({
       type: 'POST',
       url: '../ajax/fileupload.php',
-      data: fd,
+      data: formdata,
       processData: false,
       contentType: false,
       dataType: 'JSON',
@@ -966,12 +971,11 @@ function uploadFile(fd, editor, isImage) {
                returnTag = '';
                var tag = getFileTag(element);
                //if is an image add tag
-               if(isImage){
+               if(isImage(file)){
                   returnTag = tag.tag;
                }
                //display uploaded file
-               displayUploadedFile(element[0], tag, isImage, editor);
-
+               displayUploadedFile(element[0], tag, editor);
             } else {
                returnTag = false;
                alert(element[0].error);
@@ -1036,43 +1040,39 @@ var getFileTag = function(data) {
 /**
  * Display list of uploaded file with their size
  *
- * @param      {JSON}    file       The file
- * @param      {string}  tag        The tag
- * @param      {Boolean} IsImage    The image
- * @param      {Object}  editor     The TinyMCE editor instance
+ * @param      {JSON}    file          The file
+ * @param      {String}  tag           The tag
+ * @param      {String}  filecontainer The dom id of the list file container
+ * @param      {Object}  editor        The TinyMCE editor instance
  */
 var fileindex = 0;
-var displayUploadedFile = function(file, tag ,IsImage, editor) {
-   var id     = $(editor.getElement()).attr('id');
-   var form   = $('#'+id).closest('form');
-   var action = form.attr('action');
-   var div    = 'fileupload_info';
-   var rand   = Math.random();
-   var ext    = file.name.split('.').pop();
+var displayUploadedFile = function(file, tag, editor) {
+   filecontainer = $(editor.targetElm).closest('.fileupload_info');
 
-   if(action == undefined
-      || action.indexOf('ticket.form.php') >= 0
-      || action.indexOf('tracking.injector.php') >= 0) {
-      div = 'fileupload_info_ticket';
-   }
+   console.log(editor, $(editor.targetElm), filecontainer)
 
-   var p = $('<p/>')
-            .attr('id',file.id)
-            .html(getExtIcon(ext)+'&nbsp;'+
-                  '<b>'+file.display+'</b>'+
-                  '&nbsp;('
-                  +getSize(file.size)+')&nbsp;')
-            .appendTo('#'+div);
-   var p2 = $('<p/>')
-            .attr('id',file.id+'2')
-            .css({'display':'none'})
-            .appendTo('#'+div);
+   var rand = Math.random();
+   var ext  = file.name.split('.').pop();
+
+   var p    = $('<p/>')
+               .attr('id',file.id)
+               .html(getExtIcon(ext)+'&nbsp;'+
+                     '<b>'+file.display+'</b>'+
+                     '&nbsp;('
+                     +getSize(file.size)+')&nbsp;')
+               .appendTo(filecontainer);
+
+   var p2   = $('<p/>')
+              .attr('id',file.id+'2')
+              .css({'display':'none'})
+              .appendTo(filecontainer);
 
    // File
    $('<input/>')
       .attr('type', 'hidden')
       .attr('name', '_filename['+fileindex+']')
       .attr('value',file.name).appendTo(p);
+
    // Tag
    $('<input/>')
       .attr('type', 'hidden')
@@ -1083,7 +1083,7 @@ var displayUploadedFile = function(file, tag ,IsImage, editor) {
    // Delete button
    var elementsIdToRemove = {0:file.id, 1:file.id+'2'};
    $('<img src="../pics/delete.png" class="pointer">').click(function() {
-      deleteImagePasted(elementsIdToRemove, tag.tag,editor);
+      deleteImagePasted(elementsIdToRemove, tag.tag, editor);
    }).appendTo(p);
 
    fileindex++;
@@ -1152,16 +1152,18 @@ var getSize = function (size) {
  * @param      {string}  tagToRemove         The tag to remove
  * @param      {Object}  editor              The editor
  */
-var deleteImagePasted = function(elementsIdToRemove, tagToRemove,editor) {
+var deleteImagePasted = function(elementsIdToRemove, tagToRemove, editor) {
    // Remove file display lines
    $.each(elementsIdToRemove, function (index, element) {
       $('#'+element).remove();
    });
 
-   editor.setContent(editor.getContent().replace('<p>'+tagToRemove+'</p>', ''));
+   if (typeof editor !== "undefined") {
+      editor.setContent(editor.getContent().replace('<p>'+tagToRemove+'</p>', ''));
 
-   var regex = new RegExp('#', 'g');
-   editor.dom.remove(tagToRemove.replace(regex, ''));
+      var regex = new RegExp('#', 'g');
+      editor.dom.remove(tagToRemove.replace(regex, ''));
+   }
 };
 
 
@@ -1425,13 +1427,8 @@ var insertImageInTinyMCE = function(editor, file) {
    var state_upload = '[** UPLOADING FILE == '+file.name+' **]';
    editor.execCommand('mceInsertContent', false, state_upload);
 
-   //Create formdata objet to upload object as file on ajax request
-   var formdata = new FormData();
-   formdata.append('filename[0]', file, file.name);
-   formdata.append('name', 'filename');
-
    //make ajax call for upload doc
-   var tag = uploadFile(formdata, editor, isImage(file));
+   var tag = uploadFile(file, editor);
 
    //replace upload state by html render of image
    replaceContent(editor, state_upload, '');
@@ -1450,69 +1447,53 @@ var insertImageInTinyMCE = function(editor, file) {
  * @param  {[Object]} editor TinyMCE editor
  */
 tinymce.PluginManager.add('paste_upload_doc', function(editor) {
-   var id              = $(editor.getElement()).attr('id');
-   var form            = $('#'+id).closest('form');
-   var action          = form.attr('action');
-   var editorForTicket = false;
-   var editorForOther  = false;
-   var input           = form.find("input[type=submit]")
-                           .filter("[name=add],[name=update]");
-   var myDiv           = form.find("div[id='fileupload_info']");
-   var myDivTicket     = form.find("div[id='fileupload_info_ticket']");
-
-   if (action.indexOf('ticket.form.php') >= 0
-       || action.indexOf('tracking.injector.php') >= 0) {
-      editorForTicket = true;
-   } else {
-      editorForOther = true;
-   }
-
-   if (editorForTicket && myDivTicket.length
-       || editorForOther && myDiv.length && input.length) {
-
-      editor.on('drop', function(event) {
-         if (event.dataTransfer
-             && event.dataTransfer.files.length > 0) {
-            stopEvent(event);
-            $.each(event.dataTransfer.files, function(index, element) {
-               insertImageInTinyMCE(editor, element);
-            });
-         }
-      });
-
-      editor.on('PastePreProcess', function(event) {
+   editor.on('drop', function(event) {
+      if (event.dataTransfer
+          && event.dataTransfer.files.length > 0) {
          stopEvent(event);
 
-         //Check if data is an image
-         if (isImageFromPaste(event.content)) {
-            //extract base64 data
-            var base64 = extractSrcFromImgTag(event.content);
+         // for earch dropped files
+         $.each(event.dataTransfer.files, function(index, element) {
+            insertImageInTinyMCE(editor, element);
+         });
+      }
+   });
 
-            //trasnform to blob
-            var file = dataURItoBlob(base64);
+   editor.on('PastePreProcess', function(event) {
+      stopEvent(event);
 
-            insertImageInTinyMCE(editor, file);
-         } else if (isImageBlobFromPaste(event.content)) {
-            var src = extractSrcFromBlobImgTag(event.content);
-               var xhr = new XMLHttpRequest();
-               xhr.open('GET', src, true);
-               xhr.responseType = 'blob';
-               xhr.onload = function(event) {
-                  if (this.status == 200) {
-                     var file  = new Blob([this.response], {type: 'image/png'});
-                     file.name = 'image_paste'+ Math.floor((Math.random() * 10000000) + 1)+".png";
-                     insertImageInTinyMCE(editor, file);
-                  } else{
-                     console.log("paste error");
-                  }
-               };
-               xhr.send();
-         }
-      });
-   }
+      //Check if data is an image
+      if (isImageFromPaste(event.content)) {
+         //extract base64 data
+         var base64 = extractSrcFromImgTag(event.content);
+
+         //trasnform to blob
+         var file = dataURItoBlob(base64);
+
+         insertImageInTinyMCE(editor, file);
+
+      } else if (isImageBlobFromPaste(event.content)) {
+         var src = extractSrcFromBlobImgTag(event.content);
+         var xhr = new XMLHttpRequest();
+         xhr.open('GET', src, true);
+         xhr.responseType = 'blob';
+         xhr.onload = function(event) {
+            if (this.status == 200) {
+               // fill missing file properties
+               var file  = new Blob([this.response], {type: 'image/png'});
+               file.name = 'image_paste'+ Math.floor((Math.random() * 10000000) + 1)+".png";
+
+               insertImageInTinyMCE(editor, file);
+            } else{
+               console.log("paste error");
+            }
+         };
+         xhr.send();
+      }
+   });
 });
 
-var stopEvent = function (event) {
+var stopEvent = function(event) {
    event.preventDefault();
    event.stopPropagation();
 };

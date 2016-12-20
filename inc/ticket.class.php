@@ -3256,29 +3256,10 @@ class Ticket extends CommonITILObject {
          echo "<div id='content$rand_text'>";
          echo "<textarea id='$content_id' name='content' cols='$cols' rows='$rows'>".
                          $values['content']."</textarea></div>";
-
-         if ($CFG_GLPI["use_rich_text"]) {
-            echo  Html::fileForRichText(array('name'      => 'upload_rich_text',
-                                              'editor_id' => $content_id ));
-         }
+         echo  Html::file(array('editor_id' => $content_id ));
 
          echo "</td></tr>";
       }
-
-      // File upload system
-      $width = '100%';
-      if ($CFG_GLPI['use_rich_text']) {
-         $width = '50%';
-      }
-      echo "<tr class='tab_bg_1'>";
-      echo "<td class='top'>".sprintf(__('%1$s (%2$s)'), __('File'), Document::getMaxUploadSize());
-      DocumentType::showAvailableTypesLink();
-      echo "</td>";
-      echo "<td class='top'>";
-
-      echo "<div id='fileupload_info_ticket'></div>";
-      echo "</td>";
-      echo "</tr>";
 
       if (!$ticket_template) {
          echo "<tr class='tab_bg_1'>";
@@ -4271,13 +4252,6 @@ class Ticket extends CommonITILObject {
          echo "<textarea id='$content_id' name='content' style='width:100%' rows='$rows'>".
                 $this->fields["content"]."</textarea></div>";
 
-         if (($CFG_GLPI["use_rich_text"]
-              && !CommonGLPI::isLayoutWithMain())
-             || $this->isNewItem() ) {
-            echo Html::fileForRichText(array('name'      => 'upload_rich_text',
-                                             'editor_id' => $content_id ));
-         }
-
          echo Html::scriptBlock("$(document).ready(function() { $('#$content_id').autogrow(); });");
          echo $tt->getEndHiddenFieldValue('content', $this);
 
@@ -4298,13 +4272,6 @@ class Ticket extends CommonITILObject {
             echo "<div id='content$rand_text'>";
             echo "<textarea id='$content_id' name='content' style='width:100%' rows='$rows'>".
                $this->fields["content"]."</textarea></div>";
-
-         if (($CFG_GLPI["use_rich_text"]
-              && !CommonGLPI::isLayoutWithMain())
-             || $this->isNewItem() ) {
-               echo Html::fileForRichText(array('name'      => 'upload_rich_text',
-                                                'editor_id' => $content_id ));
-            }
 
             echo Html::scriptBlock("$(document).ready(function() { $('#$content_id').autogrow(); });");
             echo $tt->getEndHiddenFieldValue('content', $this);
@@ -4393,23 +4360,10 @@ class Ticket extends CommonITILObject {
             }
          }
       }
-      echo "<div id='fileupload_info_ticket'></div>";
+      echo Html::file(array('filecontainer' => 'fileupload_info_ticket',
+                            'editor_id'     => $content_id ));
       echo "</td>";
       echo "</tr>";
-
-      if (!$CFG_GLPI["use_rich_text"]) {
-         echo "<tr class='tab_bg_1'>";
-         echo "<td>";
-         echo "</td>";
-         echo "<td colspan='1'>";
-         echo Html::file(array('multiple' => true,
-                               'showfilecontainer' => 'fileupload_info_ticket'
-                               ));
-         echo "</td>";
-         echo "<td>";
-         echo "</td>";
-         echo "</tr>";
-      }
 
       if ((!$ID
            || $canupdate

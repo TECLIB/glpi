@@ -679,10 +679,8 @@ class TicketFollowup  extends CommonDBTM {
          echo  $values["content"];
          echo "</textarea>";
          echo "</div>";
-         if ($CFG_GLPI["use_rich_text"]) {
-            echo  Html::fileForRichText(array('name'      => 'upload_rich_text',
-                                              'editor_id' => $content_id ));
-         } else {
+         Html::file(array('editor_id' => $content_id ));
+         if (!$CFG_GLPI["use_rich_text"]) {
             echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
          }
 
@@ -710,29 +708,6 @@ class TicketFollowup  extends CommonDBTM {
          echo "<td>".__('Private')."</td><td>";
          Dropdown::showYesNo('is_private', $this->fields["is_private"]);
          echo "</td></tr>";
-
-         if (!$CFG_GLPI["use_rich_text"]) {
-            echo "<tr class='tab_bg_1'>";
-            echo "<td>";
-            echo "</td>";
-            echo "<td colspan='1'>";
-            echo Html::file(array('multiple' => true,
-                                  'showfilecontainer' => 'fileupload_info'
-                                  ));
-            echo "</td>";
-            echo "<td>";
-            echo "</td>";
-            echo "</tr>";
-         }
-
-         echo "<tr class='tab_bg_1'>";
-         echo "<td class='top'>".sprintf(__('%1$s (%2$s)'), __('File'), Document::getMaxUploadSize());
-         DocumentType::showAvailableTypesLink();
-         echo "</td>";
-         echo "<td class='top'>";
-         echo "<div id='fileupload_info'></div>";
-         echo "</td>";
-         echo "</tr>";
 
          $this->showFormButtons($options);
 
@@ -763,6 +738,10 @@ class TicketFollowup  extends CommonDBTM {
          echo  $values["content"];
          echo "</textarea>";
          echo "</div>";
+         Html::file(array('editor_id' => $content_id ));
+         if (!$CFG_GLPI["use_rich_text"]) {
+            echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
+         }
 
          echo "<input type='hidden' name='tickets_id' value='".$this->fields["tickets_id"]."'>";
          echo "<input type='hidden' name='requesttypes_id' value='".
@@ -773,32 +752,6 @@ class TicketFollowup  extends CommonDBTM {
          }
 
          echo "</td></tr>\n";
-
-         if ($ID <= 0) {
-            // Document_Item::showSimpleAddForItem($ticket);
-            if (!$CFG_GLPI["use_rich_text"]) {
-               echo "<tr class='tab_bg_1'>";
-               echo "<td>";
-               echo "</td>";
-               echo "<td colspan='1'>";
-               echo Html::file(array('multiple' => true,
-                                     'showfilecontainer' => 'fileupload_info'
-                                     ));
-               echo "</td>";
-               echo "<td>";
-               echo "</td>";
-               echo "</tr>";
-            }
-
-            echo "<tr class='tab_bg_1'>";
-            echo "<td class='top'>".sprintf(__('%1$s (%2$s)'), __('File'), Document::getMaxUploadSize());
-            DocumentType::showAvailableTypesLink();
-            echo "</td>";
-            echo "<td class='top'>";
-            echo "<div id='fileupload_info'></div>";
-            echo "</td>";
-            echo "</tr>";
-         }
 
          $this->showFormButtons($options);
       }

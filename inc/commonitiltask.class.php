@@ -1247,11 +1247,9 @@ abstract class CommonITILTask  extends CommonDBTM {
       echo  $values["content"];
       echo "</textarea>";
       echo "</div>";
-      if ($CFG_GLPI["use_rich_text"]) {
-         echo Html::fileForRichText(['name'      => 'upload_rich_text',
-                                     'editor_id' => $content_id]);
-      } else {
-        echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
+      Html::file(array('editor_id' => $content_id ));
+      if (!$CFG_GLPI["use_rich_text"]) {
+         echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
       }
 
       echo "</td>";
@@ -1341,28 +1339,6 @@ abstract class CommonITILTask  extends CommonDBTM {
                                                   'toadd'           => $toadd));
 
       echo "</td></tr>\n";
-
-      if (!$CFG_GLPI["use_rich_text"]) {
-         echo "<tr class='tab_bg_1'>";
-         echo "<td>";
-         echo "</td>";
-         echo "<td colspan='1'>";
-         echo Html::file(array('multiple'          => true,
-                               'showfilecontainer' => 'fileupload_info'
-                               ));
-         echo "</td>";
-         echo "<td>";
-         echo "</td>";
-         echo "</tr>";
-      }
-
-      echo "<td class='top'>".sprintf(__('%1$s (%2$s)'), __('File'), Document::getMaxUploadSize());
-      DocumentType::showAvailableTypesLink();
-      echo "</td>";
-      echo "<td class='top'>";
-      echo "<div id='fileupload_info'></div>";
-      echo "</td>";
-      echo "</tr>";
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__('By')."</td>";
