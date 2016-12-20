@@ -1047,46 +1047,53 @@ var getFileTag = function(data) {
  */
 var fileindex = 0;
 var displayUploadedFile = function(file, tag, editor) {
-   filecontainer = $('.fileupload_info');
+   // find the nearest fileupload_info where to append file list
+   var current_dom_point = $(editor.targetElm);
+   var iteration = 0;
+   do {
+      current_dom_point = current_dom_point.parent();
+      filecontainer = current_dom_point.find('.fileupload_info')
+      iteration++;
+   } while (filecontainer.length <= 0 && iteration < 30);
 
-   console.log(editor, $(editor.targetElm), filecontainer)
+   if (filecontainer.length) {
+      var rand = Math.random();
+      var ext  = file.name.split('.').pop();
 
-   var rand = Math.random();
-   var ext  = file.name.split('.').pop();
+      var p    = $('<p/>')
+                  .attr('id',file.id)
+                  .html(getExtIcon(ext)+'&nbsp;'+
+                        '<b>'+file.display+'</b>'+
+                        '&nbsp;('
+                        +getSize(file.size)+')&nbsp;')
+                  .appendTo(filecontainer);
 
-   var p    = $('<p/>')
-               .attr('id',file.id)
-               .html(getExtIcon(ext)+'&nbsp;'+
-                     '<b>'+file.display+'</b>'+
-                     '&nbsp;('
-                     +getSize(file.size)+')&nbsp;')
-               .appendTo(filecontainer);
+      var p2   = $('<p/>')
+                 .attr('id',file.id+'2')
+                 .css({'display':'none'})
+                 .appendTo(filecontainer);
 
-   var p2   = $('<p/>')
-              .attr('id',file.id+'2')
-              .css({'display':'none'})
-              .appendTo(filecontainer);
+      // File
+      $('<input/>')
+         .attr('type', 'hidden')
+         .attr('name', '_filename['+fileindex+']')
+         .attr('value',file.name).appendTo(p);
 
-   // File
-   $('<input/>')
-      .attr('type', 'hidden')
-      .attr('name', '_filename['+fileindex+']')
-      .attr('value',file.name).appendTo(p);
+      // Tag
+      $('<input/>')
+         .attr('type', 'hidden')
+         .attr('name', '_tag_filename['+fileindex+']')
+         .attr('value', tag.name)
+         .appendTo(p);
 
-   // Tag
-   $('<input/>')
-      .attr('type', 'hidden')
-      .attr('name', '_tag_filename['+fileindex+']')
-      .attr('value', tag.name)
-      .appendTo(p);
+      // Delete button
+      var elementsIdToRemove = {0:file.id, 1:file.id+'2'};
+      $('<img src="../pics/delete.png" class="pointer">').click(function() {
+         deleteImagePasted(elementsIdToRemove, tag.tag, editor);
+      }).appendTo(p);
 
-   // Delete button
-   var elementsIdToRemove = {0:file.id, 1:file.id+'2'};
-   $('<img src="../pics/delete.png" class="pointer">').click(function() {
-      deleteImagePasted(elementsIdToRemove, tag.tag, editor);
-   }).appendTo(p);
-
-   fileindex++;
+      fileindex++;
+   }
 };
 
 /**
