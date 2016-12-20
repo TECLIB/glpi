@@ -4997,7 +4997,7 @@ class Html {
          }
       }
 
-      echo __('Attach file by dragging & dropping or copy & paste or ').
+      echo __('Attach file by drag & drop or copy & paste in editor or ').
           "<a href='' id='upload_link$rand'>".__('selecting them')."</a>".
           "<input id='upload_rich_text$rand' class='upload_rich_text' type='file' />";
 
@@ -5027,12 +5027,15 @@ class Html {
     * @param $options       array of options
     *    - name                string   field name (default filename)
     *    - onlyimages          boolean  restrict to image files (default false)
-    *    - showfilecontainer   string   DOM ID of the container showing file uploaded:
+    *    - filecontainer       string   DOM ID of the container showing file uploaded:
     *                                   use selector to display
+    *    - editor_id           string   the dom id of the tinymce editor
     *    - showfilesize        boolean  show file size with file name
-    *    - rand                string   already computed rand value
+    *    - showtitle           boolean  show the title above file list
+    *                                   (with max upload size indication)
     *    - pasteZone           string   DOM ID of the paste zone
     *    - dropZone            string   DOM ID of the drop zone
+    *    - rand                string   already computed rand value
    **/
    static function file($options=array()) {
       global $CFG_GLPI;
@@ -5044,6 +5047,7 @@ class Html {
       $p['filecontainer']     = 'fileupload_info';
       $p['editor_id']         = '';
       $p['showfilesize']      = true;
+      $p['showtitle']         = true;
       $p['pasteZone']         = false;
       $p['dropZone']          = 'dropdoc'.$randupload;
       $p['rand']              = $randupload;
@@ -5055,10 +5059,16 @@ class Html {
          }
       }
 
-      echo "<b>";
-      echo sprintf(__('%1$s (%2$s)'), __('File(s)'), Document::getMaxUploadSize());
-      DocumentType::showAvailableTypesLink();
-      echo "</b>";
+      echo "<div class='fileupload'>";
+
+      if ($p['showtitle']) {
+         echo "<b>";
+         echo sprintf(__('%1$s (%2$s)'), __('File(s)'), Document::getMaxUploadSize());
+         DocumentType::showAvailableTypesLink();
+         echo "</b>";
+      }
+
+      // div who will receive and display file list
       echo "<div id='".$p['filecontainer']."' class='fileupload_info'></div>";
 
       if (!empty($p['editor_id'])
@@ -5066,6 +5076,7 @@ class Html {
          return self::fileForRichText($options);
       }
 
+      // manage file upload without tinymce editor
       echo "<div class='fileupload' id='{$p['dropZone']}'>";
       echo "<span class='b'>".__('Drag and drop your file here, or').'</span><br>';
       echo "<input id='fileupload$randupload' type='file' name='".$p['name']."[]'
@@ -5075,6 +5086,8 @@ class Html {
       echo "<div id='progress$randupload' style='display:none'>".
               "<div class='uploadbar' style='width: 0%;'></div></div>";
       echo "</div>";
+
+      echo "</div>"; // .fileupload
 
       echo Html::scriptBlock("
          var fileindex{$p['rand']} = 0;
