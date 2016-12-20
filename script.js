@@ -1430,19 +1430,24 @@ var extractSrcFromBlobImgTag = function(content) {
    return match[1];
 };
 
-var insertImageInTinyMCE = function(editor, file) {
+/**
+ * Insert an image file into the specified tinyMce editor
+ * @param  {Object} editor The tinyMCE editor
+ * @param  {Blob}   image  The image to insert
+ */
+var insertImageInTinyMCE = function(editor, image) {
    // set a tempory tag in mce editor
-   var state_upload = '[** UPLOADING FILE == '+file.name+' **]';
+   var state_upload = '[** UPLOADING FILE == '+image.name+' **]';
    editor.execCommand('mceInsertContent', false, state_upload);
 
    //make ajax call for upload doc
-   var tag = uploadFile(file, editor);
+   var tag = uploadFile(image, editor);
 
    //replace upload state by html render of image
    replaceContent(editor, state_upload, '');
 
    if (tag !== false) {
-      insertImgFromFile(editor, file, tag);
+      insertImgFromFile(editor, image, tag);
    }
 
    //Set cursor at the end
@@ -1501,6 +1506,9 @@ tinymce.PluginManager.add('paste_upload_doc', function(editor) {
    });
 });
 
+/**
+ * Stop propagation and navigation default for the specified event
+ */
 var stopEvent = function(event) {
    event.preventDefault();
    event.stopPropagation();
