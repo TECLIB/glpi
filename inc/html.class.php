@@ -5003,7 +5003,7 @@ class Html {
 
       echo Html::scriptBlock("
          var fileindex = 0;
-         $(function(){
+         $(function() {
             $('#upload_link$rand').on('click', function(e){
                e.preventDefault();
                $('#upload_rich_text$rand:hidden').trigger('click');
@@ -5059,7 +5059,7 @@ class Html {
          }
       }
 
-      echo "<div class='fileupload'>";
+      echo "<div class='fileupload draghoverable'>";
 
       if ($p['showtitle']) {
          echo "<b>";

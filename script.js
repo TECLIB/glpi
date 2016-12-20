@@ -1505,3 +1505,46 @@ var stopEvent = function(event) {
    event.preventDefault();
    event.stopPropagation();
 };
+
+
+$(function() {
+   // set a function to track drag hover event
+   $(document).bind('dragover', function (event) {
+      event.preventDefault();
+
+      var dropZone = $('.dropzone'),
+          foundDropzone,
+          timeout = window.dropZoneTimeout;
+
+      if (!timeout) {
+            dropZone.addClass('dragin');
+      } else {
+         clearTimeout(timeout);
+      }
+
+      var found = false,
+          node = event.target;
+
+      do {
+         if ($(node).hasClass('draghoverable')) {
+            found = true;
+            foundDropzone = $(node);
+            break;
+         }
+
+         node = node.parentNode;
+      } while (node != null);
+
+      dropZone.removeClass('dragin draghover');
+
+      if (found) {
+         foundDropzone.addClass('draghover');
+      }
+   });
+
+   // remove dragover styles on drop
+   $(document).bind('drop', function(event) {
+      event.preventDefault();
+      $('.draghoverable').removeClass('draghover');
+   });
+});
