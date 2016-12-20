@@ -4545,15 +4545,16 @@ class CommonDBTM extends CommonGLPI {
                                                 stripslashes($doc->fields["name"]),
                                                 stripslashes($doc->fields["filename"]));
 
-            // for sub item, attach to document to parent item (if not an image)
+            // for sub item, attach to document to parent item
             $item_fordocitem = $this;
             $skip_docitem = false;
             if (isset($input['_job'])) {
-               if (strpos($doc->fields['mime'], 'image/') !== false) {
-                  $skip_docitem = true;
-               } else {
-                  $item_fordocitem = $input['_job'];
-               }
+               $item_fordocitem = $input['_job'];
+            }
+
+            // if doc is an image, do not attach in docitem
+            if (strpos($doc->fields['mime'], 'image/') !== false) {
+               $skip_docitem = true;
             }
 
             // add doc - item ling
