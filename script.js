@@ -1047,7 +1047,7 @@ var getFileTag = function(data) {
  */
 var fileindex = 0;
 var displayUploadedFile = function(file, tag, editor) {
-   filecontainer = $(editor.targetElm).closest('.fileupload_info');
+   filecontainer = $('.fileupload_info');
 
    console.log(editor, $(editor.targetElm), filecontainer)
 

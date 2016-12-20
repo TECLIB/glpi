@@ -3256,7 +3256,7 @@ class Ticket extends CommonITILObject {
          echo "<div id='content$rand_text'>";
          echo "<textarea id='$content_id' name='content' cols='$cols' rows='$rows'>".
                          $values['content']."</textarea></div>";
-         echo  Html::file(array('editor_id' => $content_id ));
+         Html::file(array('editor_id' => $content_id ));
 
          echo "</td></tr>";
       }
@@ -4360,8 +4360,8 @@ class Ticket extends CommonITILObject {
             }
          }
       }
-      echo Html::file(array('filecontainer' => 'fileupload_info_ticket',
-                            'editor_id'     => $content_id ));
+      Html::file(array('filecontainer' => 'fileupload_info_ticket',
+                       'editor_id'     => $content_id ));
       echo "</td>";
       echo "</tr>";
 

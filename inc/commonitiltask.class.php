@@ -1247,7 +1247,7 @@ abstract class CommonITILTask  extends CommonDBTM {
       echo  $values["content"];
       echo "</textarea>";
       echo "</div>";
-      Html::file(array('editor_id' => $content_id ));
+      Html::file(array('editor_id' => $content_id));
       if (!$CFG_GLPI["use_rich_text"]) {
          echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
       }

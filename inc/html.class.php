@@ -4999,7 +4999,7 @@ class Html {
 
       echo __('Attach file by dragging & dropping or copy & paste or ').
           "<a href='' id='upload_link$rand'>".__('selecting them')."</a>".
-          "<input id='upload_rich_text$rand' type='file' />";
+          "<input id='upload_rich_text$rand' class='upload_rich_text' type='file' />";
 
       echo Html::scriptBlock("
          var fileindex = 0;
@@ -5076,66 +5076,61 @@ class Html {
               "<div class='uploadbar' style='width: 0%;'></div></div>";
       echo "</div>";
 
-      $script = "
+      echo Html::scriptBlock("
          var fileindex{$p['rand']} = 0;
-         function uploadFileWithoutRichText{$p['rand']}() {
-            $('#fileupload{$p['rand']}').fileupload({
-               dataType: 'json',
-               pasteZone: ".($p['pasteZone'] !== false
-                              ? "$('#{$p['pasteZone']}')"
-                              : "false").",
-               dropZone:  ".($p['dropZone'] !== false
-                              ? "$('#{$p['dropZone']}')"
-                              : "false").",
-               acceptFileTypes: ".($p['onlyimages']
-                                    ? "'/(\.|\/)(gif|jpe?g|png)$/i'"
-                                    : "undefined").",
-               progressall: function(event, data) {
-                  var progress = parseInt(data.loaded / data.total * 100, 10);
-                  $('#progress{$p['rand']}')
-                     .show()
-                  .filter('.uploadbar')
-                     .css({
-                        width: progress + '%'
-                     })
-                     .text(progress + '%')
-                     .show();
-               },
-               done: function (event, data) {
-                  var filedata = data;
-                  // Load image tag, and display image uploaded
-                  $.ajax({
-                     type: 'POST',
-                     url: '".$CFG_GLPI['root_doc']."/ajax/getFileTag.php',
-                     data: {
-                        data: data.result.{$p['name']}
-                     },
-                     dataType: 'JSON',
-                     success: function(tag) {
-                        $.each(filedata.result.{$p['name']}, function(index, file) {
-                           if (file.error === undefined) {
-                              displayUploadedFile(file, tag[index]);
+         $('#fileupload{$p['rand']}').fileupload({
+            dataType: 'json',
+            pasteZone: ".($p['pasteZone'] !== false
+                           ? "$('#{$p['pasteZone']}')"
+                           : "false").",
+            dropZone:  ".($p['dropZone'] !== false
+                           ? "$('#{$p['dropZone']}')"
+                           : "false").",
+            acceptFileTypes: ".($p['onlyimages']
+                                 ? "'/(\.|\/)(gif|jpe?g|png)$/i'"
+                                 : "undefined").",
+            progressall: function(event, data) {
+               var progress = parseInt(data.loaded / data.total * 100, 10);
+               $('#progress{$p['rand']}')
+                  .show()
+               .filter('.uploadbar')
+                  .css({
+                     width: progress + '%'
+                  })
+                  .text(progress + '%')
+                  .show();
+            },
+            done: function (event, data) {
+               var filedata = data;
+               // Load image tag, and display image uploaded
+               $.ajax({
+                  type: 'POST',
+                  url: '".$CFG_GLPI['root_doc']."/ajax/getFileTag.php',
+                  data: {
+                     data: data.result.{$p['name']}
+                  },
+                  dataType: 'JSON',
+                  success: function(tag) {
+                     $.each(filedata.result.{$p['name']}, function(index, file) {
+                        if (file.error === undefined) {
+                           displayUploadedFile(file, tag[index]);
 
-                              $('#progress{$p['rand']} .uploadbar')
-                                 .text('".__('Upload successful')."')
-                                 .css('width', '100%')
-                                 .delay(2000)
-                                 .fadeOut('slow');
-                           } else {
-                              $('#progress{$p['rand']} .uploadbar')
-                                 .text(file.error)
-                                 .css('width', '100%');
-                           }
-                        });
-                     }
-                  });
-               }
-            });
-         };
-         ";
-
-      $script .= "uploadFileWithoutRichText".$p['rand']."();";
-      echo Html::scriptBlock($script);
+                           $('#progress{$p['rand']} .uploadbar')
+                              .text('".__('Upload successful')."')
+                              .css('width', '100%')
+                              .delay(2000)
+                              .fadeOut('slow');
+                        } else {
+                           $('#progress{$p['rand']} .uploadbar')
+                              .text(file.error)
+                              .css('width', '100%');
+                        }
+                     });
+                  }
+               });
+            }
+         });
+      ");
    }
 
 
