@@ -5077,7 +5077,7 @@ class Html {
       }
 
       // manage file upload without tinymce editor
-      echo "<div class='fileupload' id='{$p['dropZone']}'>";
+      echo "<div id='{$p['dropZone']}'>";
       echo "<span class='b'>".__('Drag and drop your file here, or').'</span><br>';
       echo "<input id='fileupload$randupload' type='file' name='".$p['name']."[]'
                       data-url='".$CFG_GLPI["root_doc"]."/ajax/fileupload.php'
@@ -5126,7 +5126,10 @@ class Html {
                   success: function(tag) {
                      $.each(filedata.result.{$p['name']}, function(index, file) {
                         if (file.error === undefined) {
-                           displayUploadedFile(file, tag[index]);
+                           var editor = {
+                              targetElm: $('#fileupload{$p['rand']}')
+                           };
+                           displayUploadedFile(file, tag[index], editor);
 
                            $('#progress{$p['rand']} .uploadbar')
                               .text('".__('Upload successful')."')
