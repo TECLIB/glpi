@@ -85,7 +85,7 @@ if (isset($response[$_REQUEST['name']]) && is_array($response[$_REQUEST['name']]
          // Unlink file
          $val->error = $errors['accept_file_types'];
          if (file_exists($upload_dir.$val->name)) {
-            @unlink($upload_dir.$val->name);
+            unlink($upload_dir.$val->name);
          }
       }
       $val->id = 'doc'.$_REQUEST['name'].mt_rand();

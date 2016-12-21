@@ -312,16 +312,6 @@ class TicketFollowup  extends CommonDBTM {
          return false;
       }
 
-      if (isset($input["content"])) {
-         $input["content"] = preg_replace('/\\\\r\\\\n/',"\n",$input['content']);
-         $input["content"] = preg_replace('/\\\\n/',"\n",$input['content']);
-         if (!$CFG_GLPI['use_rich_text']) {
-            $input["content"] = Html::entity_decode_deep($input["content"]);
-            $input["content"] = Html::entity_decode_deep($input["content"]);
-            $input["content"] = Html::clean($input["content"]);
-         }
-      }
-
       // Pass old assign From Ticket in case of assign change
       // if (isset($input["_old_assign"])) {
       //    $input["_job"]->fields["_old_assign"] = $input["_old_assign"];

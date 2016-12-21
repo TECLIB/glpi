@@ -749,8 +749,6 @@ class KnowbaseItem extends CommonDBTM {
                                        $params);
          echo "<span id='visibility$rand'></span>";
          echo "</td></tr>\n";
-
-
       }
 
       $this->showFormButtons($options);
