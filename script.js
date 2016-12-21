@@ -946,9 +946,8 @@ $(function(){
  *
  * @param      {blob}    file           The file to upload
  * @param      {Object}  editor         instance of editor (TinyMCE)
- * @param      {String}  filecontainer  dom id of the file list container
  */
-function uploadFile(file, editor, filecontainer) {
+function uploadFile(file, editor) {
    var returnTag = false;
 
    //Create formdata from file to send with ajax request
@@ -1554,5 +1553,14 @@ $(function() {
    $(document).bind('drop', function(event) {
       event.preventDefault();
       $('.draghoverable').removeClass('draghover');
+
+      // if file present, insert it in filelist
+      if (typeof event.originalEvent.dataTransfer.files) {
+         $.each(event.originalEvent.dataTransfer.files, function(index, element) {
+            uploadFile(element, {
+               targetElm: $(event.target).find('.fileupload_info')
+            });
+         });
+      }
    });
 });
