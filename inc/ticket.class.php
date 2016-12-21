@@ -6287,11 +6287,11 @@ class Ticket extends CommonITILObject {
 
          echo "<div class='ticket_description'>";
 
-        if ($CFG_GLPI["use_rich_text"]) {
+         if ($CFG_GLPI["use_rich_text"]) {
             echo html_entity_decode($this->fields['content']);
-        } else {
+         } else {
             echo Html::setSimpleTextContent($this->fields['content']);
-        }
+         }
 
          echo "</div>";
 
