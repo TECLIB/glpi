@@ -638,7 +638,6 @@ class TicketFollowup  extends CommonDBTM {
          $width = '50%';
       }
 
-
       if ($tech) {
          $this->showFormHeader($options);
 
@@ -652,7 +651,6 @@ class TicketFollowup  extends CommonDBTM {
          echo "<tr class='tab_bg_1'>";
          echo "<td rowspan='3'>".__('Description')."</td>";
          echo "<td rowspan='3' style='width:65%'>";
-
 
          if ($CFG_GLPI["use_rich_text"]) {
             $values["content"] = Html::setRichTextContent($content_id,
@@ -1005,8 +1003,9 @@ class TicketFollowup  extends CommonDBTM {
             }
             echo ">";
             $content = nl2br($data['content']);
-            if (empty($content)) $content = NOT_AVAILABLE;
-
+            if (empty($content)) {
+               $content = NOT_AVAILABLE;
+            }
 
             if ($CFG_GLPI["use_rich_text"]) {
                $content = html_entity_decode($content);

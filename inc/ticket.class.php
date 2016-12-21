@@ -3242,7 +3242,6 @@ class Ticket extends CommonITILObject {
          echo "<td class='middle right'>".__('Description')."</td>";
          echo "<td class='center middle'>";
 
-
          if ($CFG_GLPI["use_rich_text"]) {
             $values["content"] = Html::setRichTextContent($content_id,
                                                           $this->fields["content"],
@@ -4269,7 +4268,6 @@ class Ticket extends CommonITILObject {
                                                                 $rand);
             $rows = 10;
 
-
             echo "<div id='content$rand_text'>";
             echo "<textarea id='$content_id' name='content' style='width:100%' rows='$rows'>".
                $this->fields["content"]."</textarea></div>";
@@ -4281,7 +4279,6 @@ class Ticket extends CommonITILObject {
             $content = Toolbox::unclean_cross_side_scripting_deep(Html::entity_decode_deep($this->fields['content']));
             echo nl2br(Html::Clean($content));
          }
-
       }
       echo "</td>";
       echo "</tr>";
@@ -4327,7 +4324,6 @@ class Ticket extends CommonITILObject {
          echo "</td>";
       }
       echo "</tr>";
-
 
       // View files added
       echo "<tr class='tab_bg_1'>";
@@ -6113,7 +6109,7 @@ class Ticket extends CommonITILObject {
             echo "<p>";
             if (isset($item_i['state'])) {
                $onClick = "onclick='change_task_state(".$item_i['id'].", this)'";
-               if( !$item_i['can_edit'] ) {
+               if (!$item_i['can_edit']) {
                   $onClick = "style='cursor: not-allowed;'" ;
                }
                echo "<span class='state state_".$item_i['state']."'
@@ -6123,9 +6119,9 @@ class Ticket extends CommonITILObject {
             }
 
             if ($CFG_GLPI["use_rich_text"]) {
-              echo html_entity_decode($content);
+               echo html_entity_decode($content);
             } else {
-              echo $content;
+               echo $content;
             }
             echo "</p>";
 
@@ -6292,9 +6288,9 @@ class Ticket extends CommonITILObject {
          echo "<div class='ticket_description'>";
 
         if ($CFG_GLPI["use_rich_text"]) {
-          echo html_entity_decode($this->fields['content']);
+            echo html_entity_decode($this->fields['content']);
         } else {
-          echo Html::setSimpleTextContent($this->fields['content']);
+            echo Html::setSimpleTextContent($this->fields['content']);
         }
 
          echo "</div>";

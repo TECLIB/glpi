@@ -5628,8 +5628,8 @@ class Html {
                $ok   = Toolbox::getMime($fullpath, 'image');
             }
             if (isset($image['tag'])) {
-                if ($ok || empty($mime)) {
-               // Replace tags by image in textarea
+               if ($ok || empty($mime)) {
+                  // Replace tags by image in textarea
 
                   if($addLink){
                      $out .= '<a href="'.$CFG_GLPI['root_doc'].
