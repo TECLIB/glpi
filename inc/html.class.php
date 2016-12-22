@@ -5044,6 +5044,7 @@ class Html {
     *    - showfilesize        boolean  show file size with file name
     *    - showtitle           boolean  show the title above file list
     *                                   (with max upload size indication)
+    *    - enable_richtext     boolean  switch to richtext fileupload
     *    - pasteZone           string   DOM ID of the paste zone
     *    - dropZone            string   DOM ID of the drop zone
     *    - rand                string   already computed rand value
@@ -5058,6 +5059,7 @@ class Html {
       $p['filecontainer']     = 'fileupload_info';
       $p['showfilesize']      = true;
       $p['showtitle']         = true;
+      $p['enable_richtext']   = false;
       $p['pasteZone']         = false;
       $p['dropZone']          = 'dropdoc'.$randupload;
       $p['rand']              = $randupload;
@@ -5084,7 +5086,7 @@ class Html {
       $display .= "<div id='".$p['filecontainer']."' class='fileupload_info'></div>";
 
       if (!empty($p['editor_id'])
-          && $CFG_GLPI["use_rich_text"]) {
+          && $p['enable_richtext']) {
          $options_rt = $options;
          $options_rt['display'] = false;
          $display .= self::fileForRichText($options_rt);
@@ -5171,6 +5173,25 @@ class Html {
       }
    }
 
+   /**
+    * Display an html textarea  with extended options
+    *
+    * @since 9.2
+    *
+    * @param  array  $options with these keys:
+    *  - name (string):              corresponding html attribute
+    *  - filecontainer (string):     dom id for the upload filelist
+    *  - rand (string):              random param to avoid overriding between textareas
+    *  - editor_id (string):         id attribute for the textarea
+    *  - value (string):             value attribute for the textarea
+    *  - enable_richtext (bool):     enable tinymce for this textarea
+    *  - enable_fileupload (bool):   enable the inline fileupload system
+    *  - display (bool):             display or return the generated html
+    *  - cols (int):                 textarea cols attribute (witdh)
+    *  - rows (int):                 textarea rows attribute (height)
+    *
+    * @return mixed          the html is display paremeter is false or true
+    */
    static function textarea($options=array()) {
       //default options
       $p['name']              = 'text';
@@ -5178,8 +5199,8 @@ class Html {
       $p['rand']              = mt_rand();
       $p['editor_id']         = 'text'.$p['rand'];
       $p['value']             = '';
-      $p['enable_fileupload'] = false;
       $p['enable_richtext']   = false;
+      $p['enable_fileupload'] = false;
       $p['display']           = true;
       $p['cols']              = 100;
       $p['rows']              = 15;
@@ -5194,18 +5215,23 @@ class Html {
 
       if ($p['enable_richtext']) {
          $display .= Html::initEditorSystem($p['editor_id'], $p['rand'], false);
-
-         if ($p['enable_fileupload']) {
-            $p_rt = $p;
-            $p_rt['display'] = false;
-            $display .= Html::file($p_rt);
-         }
       } else {
-         $display .= Html::scriptBlock("$(document).ready(function() { $('".$p['editor_id']."').autogrow(); });");
+         $display .= Html::scriptBlock("
+                        $(document).ready(function() {
+                           $('".$p['editor_id']."').autogrow();
+                        });
+                     ");
+      }
+
+      if ($p['enable_fileupload']) {
+         $p_rt = $p;
+         $p_rt['display'] = false;
+         $display .= Html::file($p_rt);
       }
 
       if ($p['display']) {
          echo $display;
+         return true;
       } else {
          return $display;
       }
