@@ -88,10 +88,6 @@ class GLPIUploadHandler extends UploadHandler {
             return __('File is too small');
             break;
 
-         case 'accept_file_types':
-            return __('Filetype not allowed');
-            break;
-
          case 'max_number_of_files':
             return __('Maximum number of files exceeded');
             break;

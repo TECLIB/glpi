@@ -61,7 +61,7 @@ if (isset($response[$_REQUEST['name']]) && is_array($response[$_REQUEST['name']]
          }
       } else {
          // Unlink file
-         $val->error = $errors['accept_file_types'];
+         $val->error = __('Filetype not allowed');
          if (file_exists($upload_dir.$val->name)) {
             unlink($upload_dir.$val->name);
          }
