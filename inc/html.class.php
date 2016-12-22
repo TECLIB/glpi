@@ -1232,7 +1232,8 @@ class Html {
       }
 
       // Some Javascript-Functions which we may need later
-      echo Html::script($CFG_GLPI["root_doc"].'/script.js');
+      echo Html::script($CFG_GLPI["root_doc"].'/js/common.js');
+      echo Html::script($CFG_GLPI["root_doc"].'/js/fileupload.js');
       self::redefineAlert();
       self::redefineConfirm();
 
