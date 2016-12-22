@@ -4481,7 +4481,7 @@ class CommonDBTM extends CommonGLPI {
 
       if (!isset($input['_filename'])
           || (count($input['_filename']) == 0)) {
-         return array();
+         return $input;
       }
       $docadded     = array();
       $donotif      = isset($input['_donotif']) ? $input['_donotif'] : 0;
