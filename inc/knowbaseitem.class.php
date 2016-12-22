@@ -252,6 +252,10 @@ class KnowbaseItem extends CommonDBTM {
    **/
    function post_addItem() {
 
+      // add documents (and replace inline pictures)
+      $this->input = $this->addFiles($this->input, ['force_update'  => true,
+                                                    'content_field' => 'answer']);
+
       if (isset($this->input["_visibility"])
           && isset($this->input["_visibility"]['_type'])
           && !empty($this->input["_visibility"]["_type"])) {
@@ -707,6 +711,9 @@ class KnowbaseItem extends CommonDBTM {
    **/
    function prepareInputForUpdate($input) {
 
+      // add documents (and replace inline pictures)
+      $input = $this->addFiles($input, ['content_field' => 'answer']);
+
       // set title for question if empty
       if (isset($input["name"]) && empty($input["name"])) {
          $input["name"] = __('New item');
@@ -757,7 +764,6 @@ class KnowbaseItem extends CommonDBTM {
       }
       $rand = mt_rand();
 
-      Html::initEditorSystem('answer');
       $this->initForm($ID, $options);
       $this->showFormHeader($options);
       echo "<tr class='tab_bg_1'>";
@@ -843,11 +849,14 @@ class KnowbaseItem extends CommonDBTM {
          $rows = 15;
          echo Html::hidden('_in_modal', array('value' => 1));
       }
-
-      echo "<textarea cols='$cols' rows='$rows' id='answer' name='answer'>".$this->fields["answer"];
-      echo "</textarea>";
+      Html::textarea(['name'              => 'answer',
+                      'value'             => $this->fields["answer"],
+                      'enable_fileupload' => true,
+                      'enable_richtext'   => true,
+                      'cols'              => $cols,
+                      'rows'              => $rows]);
       echo "</td>";
-      echo "</tr>\n";
+      echo "</tr>";
 
       if ($this->isNewID($ID)) {
          echo "<tr class='tab_bg_1'>";
@@ -1994,6 +2003,7 @@ class KnowbaseItem extends CommonDBTM {
       } else {
          $answer = $this->fields["answer"];
       }
+      $answer = html_entity_decode($answer);
       $answer = Toolbox::unclean_html_cross_side_scripting_deep($answer);
 
       $callback = function ($matches) {
