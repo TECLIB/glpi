@@ -653,24 +653,17 @@ class TicketFollowup  extends CommonDBTM {
          echo "<td rowspan='3' style='width:65%'>";
 
          if ($CFG_GLPI["use_rich_text"]) {
-            $values["content"] = Html::setRichTextContent($content_id,
-                                                          $this->fields["content"],
-                                                          $rand);
             $cols              = 100;
             $rows              = 10;
-         } else {
-            $values["content"] = $this->fields["content"];
          }
-
-         echo "<div id='content$rand_text'>";
-         echo "<textarea id='$content_id' name='content' cols='$cols' rows='$rows'>";
-         echo  $values["content"];
-         echo "</textarea>";
-         echo "</div>";
-         Html::file(array('editor_id' => $content_id ));
-         if (!$CFG_GLPI["use_rich_text"]) {
-            echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
-         }
+         Html::textarea(['name'              => 'content',
+                         'value'             => $this->fields["content"],
+                         'rand'              => $rand_text,
+                         'editor_id'         => $content_id,
+                         'enable_fileupload' => true,
+                         'enable_richtext'   => $CFG_GLPI["use_rich_text"],
+                         'cols'              => $cols,
+                         'rows'              => $rows]);
 
          if ($this->fields["date"]) {
             echo "</td><td>".__('Date')."</td>";
@@ -711,25 +704,18 @@ class TicketFollowup  extends CommonDBTM {
          echo "<td class='middle right'>".__('Description')."</td>";
          echo "<td class='center middle'>";
 
-         $cols              = 100;
-         $rows              = 10;
          if ($CFG_GLPI["use_rich_text"]) {
-            $values["content"] = Html::setRichTextContent($content_id,
-                                                          $this->fields["content"],
-                                                          $rand);
-         } else {
-            $values["content"] = $this->fields["content"];
+            $cols              = 100;
+            $rows              = 10;
          }
-
-         echo "<div id='content$rand_text'>";
-         echo "<textarea id='$content_id' name='content' cols='$cols' rows='$rows'>";
-         echo  $values["content"];
-         echo "</textarea>";
-         echo "</div>";
-         Html::file(array('editor_id' => $content_id ));
-         if (!$CFG_GLPI["use_rich_text"]) {
-            echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
-         }
+         Html::textarea(['name'              => 'content',
+                         'value'             => $this->fields["content"],
+                         'rand'              => $rand_text,
+                         'editor_id'         => $content_id,
+                         'enable_fileupload' => true,
+                         'enable_richtext'   => $CFG_GLPI["use_rich_text"],
+                         'cols'              => $cols,
+                         'rows'              => $rows]);
 
          echo "<input type='hidden' name='tickets_id' value='".$this->fields["tickets_id"]."'>";
          echo "<input type='hidden' name='requesttypes_id' value='".

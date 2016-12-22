@@ -1230,27 +1230,19 @@ abstract class CommonITILTask  extends CommonDBTM {
 
       $cols       = 90;
       $rows       = 6;
-
       if ($CFG_GLPI["use_rich_text"]) {
-         $ticket = new TIcket();
-         $values["content"] = Html::setRichTextContent($content_id,
-                                                       $this->fields["content"],
-                                                       $rand);
          $cols              = 100;
          $rows              = 10;
-      } else {
-         $values["content"] = $this->fields["content"];
       }
 
-      echo "<div id='content$rand_text'>";
-      echo "<textarea name='content' style='width: 95%; height: 160px' id='$content_id'>";
-      echo  $values["content"];
-      echo "</textarea>";
-      echo "</div>";
-      Html::file(array('editor_id' => $content_id));
-      if (!$CFG_GLPI["use_rich_text"]) {
-         echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
-      }
+      Html::textarea(['name'              => 'content',
+                      'value'             => $this->fields["content"],
+                      'rand'              => $rand_text,
+                      'editor_id'         => $content_id,
+                      'enable_fileupload' => true,
+                      'enable_richtext'   => $CFG_GLPI["use_rich_text"],
+                      'cols'              => $cols,
+                      'rows'              => $rows]);
 
       echo "</td>";
       echo "<input type='hidden' name='$fkfield' value='".$this->fields[$fkfield]."'>";

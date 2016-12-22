@@ -723,12 +723,12 @@ class KnowbaseItem extends CommonDBTM {
          $rows = 15;
          echo Html::hidden('_in_modal', array('value' => 1));
       }
-
-      $values["answer"] = Html::setRichTextContent('answer', $this->fields["answer"],'');
-      echo "<textarea cols='$cols' rows='$rows' id='answer' name='answer'>".$this->fields["answer"];
-      echo "</textarea>";
-      Html::fileForRichText(array('editor_id' => 'answer'));
-      echo "<div id='fileupload_info'></div>";
+      Html::textarea(['name'              => 'answer',
+                      'value'             => $this->fields["answer"],
+                      'enable_fileupload' => true,
+                      'enable_richtext'   => true,
+                      'cols'              => $cols,
+                      'rows'              => $rows]);
       echo "</td>";
       echo "</tr>";
 
