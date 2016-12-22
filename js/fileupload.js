@@ -413,10 +413,10 @@ tinymce.PluginManager.add('paste_upload_doc', function(editor) {
    });
 
    editor.on('PastePreProcess', function(event) {
-      stopEvent(event);
-
       //Check if data is an image
       if (isImageFromPaste(event.content)) {
+         stopEvent(event);
+
          //extract base64 data
          var base64 = extractSrcFromImgTag(event.content);
 
@@ -426,6 +426,8 @@ tinymce.PluginManager.add('paste_upload_doc', function(editor) {
          insertImageInTinyMCE(editor, file);
 
       } else if (isImageBlobFromPaste(event.content)) {
+         stopEvent(event);
+
          var src = extractSrcFromBlobImgTag(event.content);
          var xhr = new XMLHttpRequest();
          xhr.open('GET', src, true);
