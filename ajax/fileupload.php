@@ -36,37 +36,15 @@
 * @since version 0.85
 */
 
-$AJAX_INCLUDE = 1;
 include ('../inc/includes.php');
-include_once(GLPI_JQUERY_UPLOADHANDLER);
 
-$errors = [
-   1                     => __('The uploaded file exceeds the upload_max_filesize directive in php.ini'),
-   2                     => __('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form'),
-   3                     => __('The uploaded file was only partially uploaded'),
-   4                     => __('No file was uploaded'),
-   6                     => __('Missing a temporary folder'),
-   7                     => __('Failed to write file to disk'),
-   8                     => __('A PHP extension stopped the file upload'),
-   'post_max_size'       => __('The uploaded file exceeds the post_max_size directive in php.ini'),
-   'max_file_size'       => __('File is too big'),
-   'min_file_size'       => __('File is too small'),
-   'accept_file_types'   => __('Filetype not allowed'),
-   'max_number_of_files' => __('Maximum number of files exceeded'),
-   'max_width'           => __('Image exceeds maximum width'),
-   'min_width'           => __('Image requires a minimum width'),
-   'max_height'          => __('Image exceeds maximum height'),
-   'min_height'          => __('Image requires a minimum height')
-];
-
-$upload_dir = GLPI_TMP_DIR.'/';
-
-$upload_handler = new UploadHandler(array('upload_dir'     => $upload_dir,
+$upload_dir     = GLPI_TMP_DIR.'/';
+$upload_handler = new GLPIUploadHandler(['upload_dir'      => $upload_dir,
                                           'param_name'     => $_REQUEST['name'] ,
                                           'orient_image'   => false,
-                                          'image_versions' => array()),
-                                    false, $errors);
-$response = $upload_handler->post(false);
+                                          'image_versions' => []],
+                                        false);
+$response       = $upload_handler->post(false);
 
 // clean compute display filesize
 if (isset($response[$_REQUEST['name']]) && is_array($response[$_REQUEST['name']])) {
