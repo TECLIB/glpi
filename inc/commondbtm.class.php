@@ -4552,8 +4552,10 @@ class CommonDBTM extends CommonGLPI {
                $item_fordocitem = $input['_job'];
             }
 
-            // if doc is an image, do not attach in docitem
-            if (strpos($doc->fields['mime'], 'image/') !== false) {
+            // if doc is an image and already inserted in content, do not attach in docitem
+            if (isset($input[$options['content_field']])
+                && strpos($input[$options['content_field']], $doc->fields["tag"]) !== false
+                && strpos($doc->fields['mime'], 'image/') !== false) {
                $skip_docitem = true;
             }
 

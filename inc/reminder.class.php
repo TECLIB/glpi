@@ -360,7 +360,8 @@ class Reminder extends CommonDBTM {
 
    function post_addItem() {
       // Add document if needed
-      $this->input = $this->addFiles($this->input, ['force_update' => true]);
+      $this->input = $this->addFiles($this->input, ['force_update'  => true,
+                                                    'content_field' => 'text']);
 
       if (isset($this->fields["begin"]) && !empty($this->fields["begin"])) {
          Planning::checkAlreadyPlanned($this->fields["users_id"], $this->fields["begin"],
@@ -645,7 +646,7 @@ class Reminder extends CommonDBTM {
          }
       }
 
-      $input = $this->addFiles($input);
+      $input = $this->addFiles($input, ['content_field' => 'text']);
 
       return $input;
    }
