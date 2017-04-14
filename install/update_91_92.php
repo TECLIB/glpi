@@ -688,7 +688,15 @@ function update91to92() {
                         `hourmin`, `hourmax`, `logs_lifetime`, `lastrun`, `lastcode`, `comment`)
                 VALUES ('SavedSearch', 'countAll', 604800, NULL, 0, 1, 3,
                         0, 24, 10, NULL, NULL, NULL); ";
-      $DB->queryOrDie($query, "9.1 Add countAll SavedSearch cron task");
+      $DB->queryOrDie($query, "9.2 Add countAll SavedSearch cron task");
+   }
+
+   //Add new sync_field for ldap servers
+   if ($migration->addField('glpi_authldaps', 'sync_field', 'string')) {
+      $migration->addKey('glpi_authldaps', 'sync_field');
+      $migration->migrationOneTable('glpi_authldaps');
+      $query = "UPDATE `glpi_authldaps` SET `sync_field`=`login_field`";
+      $DB->queryOrDie($query, "9.2 Fill ldap sync_field from login_field");
    }
 
    if ($has_backups) {
