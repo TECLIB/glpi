@@ -182,4 +182,61 @@ class AuthLDAPTest extends DbTestCase {
                    'Log$1'         => 'Historical'];
       $this->assertEquals($tabs, $expected);
    }
+
+   /**
+   * @cover AuthLDAP::getSearchOptionsNew
+   */
+   public function testGetSearchOptionsNew() {
+      $ldap     = new AuthLDAP();
+      $options  = $ldap->getSearchOptionsNew();
+      $this->assertEquals(count($options), 31);
+   }
+
+   /**
+   * @cover AuthLDAP::getSyncFields
+   */
+   public function testGetSyncFields() {
+      $ldap     = new AuthLDAP();
+      $values   = ['login_field' => 'value'];
+      $result   = $ldap->getSyncFields($values);
+      $this->assertEquals(['name' => 'value'], $result);
+
+      $result   = $ldap->getSyncFields([]);
+      $this->assertEmpty($result);
+   }
+
+   /**
+   * @cover AuthLDAP::ldapStamp2UnixStamp
+   */
+   public function testLdapStamp2UnixStamp() {
+      //Good timestamp
+      $result = AuthLDAP::ldapStamp2UnixStamp("20161114100339Z");
+      $this->assertEquals('1479117819', $result);
+
+      //Bad timestamp format
+      $result = AuthLDAP::ldapStamp2UnixStamp("20161114100339");
+      $this->assertEquals('1479117819', $result);
+
+      //Bad timestamp format
+      $result = AuthLDAP::ldapStamp2UnixStamp("201611141003");
+      $this->assertEquals('1479117780', $result);
+
+   }
+
+   /**
+   * @cover AuthLDAP::date2ldapTimeStamp
+   */
+   public function testDate2ldapTimeStamp() {
+      $result = AuthLDAP::date2ldapTimeStamp("2017-01-01 22:35:00");
+      $this->assertEquals("20170101223500.0Z", $result);
+
+      //Bad date => 01/01/1970
+      $result = AuthLDAP::date2ldapTimeStamp("2017-25-25 22:35:00");
+      $this->assertEquals("19700101000000.0Z", $result);
+
+      //No date provided => 01/01/1970
+      $result = AuthLDAP::date2ldapTimeStamp();
+      $this->assertEquals("19700101000000.0Z", $result);
+
+   }
 }
