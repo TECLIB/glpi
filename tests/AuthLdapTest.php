@@ -66,10 +66,15 @@ class AuthLDAPTest extends DbTestCase {
    */
    public function testPreconfig() {
       $ldap = new Authldap();
+      //Use Active directory preconfiguration :
+      //login_field and sync_field must be filled
       $ldap->preconfig('AD');
       $this->assertEquals($ldap->fields['login_field'], 'samaccountname');
       $this->assertEquals($ldap->fields['sync_field'], 'samaccountname');
+
+      //No preconfiguration model
       $ldap->preconfig('');
+      //Login_field is set to uid (default)
       $this->assertEquals($ldap->fields['login_field'], 'uid');
    }
 
@@ -78,7 +83,103 @@ class AuthLDAPTest extends DbTestCase {
    */
    public function testPrepareInputForUpdate() {
       $ldap   = new Authldap();
+
+      //------------ Password tests --------------------//
       $input  = ['name' => 'ldap', 'rootdn_passwd' => ''];
-      $result = $ldap->prepareInputForUpdate($input); 
+      $result = $ldap->prepareInputForUpdate($input);
+      //rootdn_passwd is set but empty
+      $this->assertFalse(isset($result['rootdn_passwd']));
+
+      //no rootdn_passwd set : should not appear in the response array
+      $input  = ['name' => 'ldap'];
+      $result = $ldap->prepareInputForUpdate($input);
+      $this->assertFalse(isset($result['rootdn_passwd']));
+
+      //rootdn_passwd is set with a value (a password, not encrypted)
+      $password = 'toto';
+      $input    = ['name' => 'ldap', 'rootdn_passwd' => $password];
+      $result   = $ldap->prepareInputForUpdate($input);
+
+      //Expected value to be encrypted using GLPIKEY key
+      $expected = Toolbox::encrypt(stripslashes($password), GLPIKEY);
+      $this->assertEquals($expected, $result['rootdn_passwd']);
+
+      $password = 'tot\'o';
+      $input    = ['name' => 'ldap', 'rootdn_passwd' => $password];
+      $result   = $ldap->prepareInputForUpdate($input);
+
+      //Expected value to be encrypted using GLPIKEY key
+      $expected = Toolbox::encrypt(stripslashes($password), GLPIKEY);
+      $this->assertEquals($expected, $result['rootdn_passwd']);
+
+      $input['_blank_passwd'] = 1;
+      $result   = $ldap->prepareInputForUpdate($input);
+      $this->assertTrue($result['rootdn_passwd'] == '');
+
+      //Field name finishing with _field : set the value in lower case
+      $input['_login_field'] = 'TEST';
+      $result         = $ldap->prepareInputForUpdate($input);
+      $this->assertTrue($result['_login_field'] == 'test');
+   }
+
+   /**
+   * @cover AuthLDAP::getGroupSearchTypeName
+   */
+   public function testgetGroupSearchTypeName() {
+      //Get all group search type values
+      $search_type = AuthLDAP::getGroupSearchTypeName();
+      $this->assertEquals(count($search_type), 3);
+
+      //Give a wrong number value
+      $search_type = AuthLDAP::getGroupSearchTypeName(4);
+      $this->assertEquals($search_type, NOT_AVAILABLE);
+
+      //Give a wrong string value
+      $search_type = AuthLDAP::getGroupSearchTypeName('toto');
+      $this->assertEquals($search_type, NOT_AVAILABLE);
+
+      //Give a existing values
+      $search_type = AuthLDAP::getGroupSearchTypeName(0);
+      $this->assertEquals($search_type, 'In users');
+
+      $search_type = AuthLDAP::getGroupSearchTypeName(1);
+      $this->assertEquals($search_type, 'In groups');
+
+      $search_type = AuthLDAP::getGroupSearchTypeName(2);
+      $this->assertEquals($search_type, 'In users and groups');
+   }
+
+   /**
+   * @cover AuthLDAP::getSpecificValueToDisplay
+   */
+   public function testGetSpecificValueToDisplay() {
+      $ldap = new AuthLDAP();
+
+      //Value as an array
+      $values = ['group_search_type' => 0];
+      $result = $ldap->getSpecificValueToDisplay('group_search_type', $values);
+      $this->assertEquals($result, 'In users');
+
+      //Value as a single value
+      $values = 1;
+      $result = $ldap->getSpecificValueToDisplay('group_search_type', $values);
+      $this->assertEquals($result, 'In groups');
+
+      //Value as a single value
+      $values = ['name' => 'ldap'];
+      $result = $ldap->getSpecificValueToDisplay('name', $values);
+      $this->assertEquals($result, '');
+
+   }
+
+   /**
+   * @cover AuthLDAP::defineTabs
+   */
+   public function testDefineTabs() {
+      $ldap     = new AuthLDAP();
+      $tabs     = $ldap->defineTabs();
+      $expected = ['AuthLDAP$main' => 'LDAP directory',
+                   'Log$1'         => 'Historical'];
+      $this->assertEquals($tabs, $expected);
    }
 }
