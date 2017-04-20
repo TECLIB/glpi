@@ -34,31 +34,34 @@
 
 class AuthLDAPTest extends DbTestCase {
 
-   public function setUp() {
+   private function addLdapServers() {
       $ldap = new AuthLDAP();
-      $ldap->add(['name'       => 'LDAP1',
-                  'is_active'  => 1,
-                  'is_default' => 0,
-                  'basedn'     => 'ou=people,dc=mycompany',
-                  'login_field'=> 'uid'
+      $ldap->add(['name'        => 'LDAP1',
+                  'is_active'   => 1,
+                  'is_default'  => 0,
+                  'basedn'      => 'ou=people,dc=mycompany',
+                  'login_field' => 'uid',
+                  'phone_field' => 'phonenumber'
                  ]);
-      $ldap->add(['name'       => 'LDAP2',
-                  'is_active'  => 0,
-                  'is_default' => 0,
-                  'basedn'     => 'ou=people,dc=mycompany',
-                  'login_field'=> 'uid'
+      $ldap->add(['name'        => 'LDAP2',
+                  'is_active'   => 0,
+                  'is_default'  => 0,
+                  'basedn'      => 'ou=people,dc=mycompany',
+                  'login_field' => 'uid',
+                  'phone_field' => 'phonenumber'
                  ]);
-      $ldap->add(['name'       => 'LDAP3',
-                  'is_active'  => 1,
-                  'is_default' => 1,
-                  'basedn'     => 'ou=people,dc=mycompany',
-                  'login_field'=> 'email'
+      $ldap->add(['name'        => 'LDAP3',
+                  'is_active'   => 1,
+                  'is_default'  => 1,
+                  'basedn'      => 'ou=people,dc=mycompany',
+                  'login_field' => 'email',
+                  'phone_field' => 'phonenumber'
                  ]);
    }
 
    public function tearDown() {
       $ldap = new AuthLDAP();
-      $ldap->deleteByCriteria(['name' =>  '%LDAP%']);
+      $ldap->deleteByCriteria(['name' => ['LIKE' => '%LDAP%'] ]);
    }
 
    /**
@@ -316,7 +319,8 @@ class AuthLDAPTest extends DbTestCase {
    * @cover AuthLDAP::getLdapServers
    */
    public function testGetLdapServers() {
-      $ldap = new AuthLDAP();
+      $this->addLdapServers();
+
       //The list of ldap server show the default server in first position
       $result = AuthLDAP::getLdapServers();
       $this->assertEquals(count($result), 3);
@@ -328,6 +332,7 @@ class AuthLDAPTest extends DbTestCase {
    */
    public function testUseAuthLdap() {
       global $DB;
+      $this->addLdapServers();
 
       $this->assertTrue(AuthLDAP::useAuthLdap());
       $sql = "UPDATE `glpi_authldaps` SET `is_active`='0'";
@@ -340,20 +345,54 @@ class AuthLDAPTest extends DbTestCase {
    */
    public function testGetNumberOfServers() {
       global $DB;
+      $this->addLdapServers();
 
       $this->assertEquals(AuthLDAP::getNumberOfServers(), 2);
       $sql = "UPDATE `glpi_authldaps` SET `is_active`='0'";
       $DB->query($sql);
-      $this->assertEquals(AuthLDAP::getNumberOfServers(), 2);
+      $this->assertEquals(AuthLDAP::getNumberOfServers(), 0);
    }
 
    /**
    * @cover AuthLDAP::buildLdapFilter
    */
    public function testBuildLdapFilter() {
+      $this->addLdapServers();
+
       $ldap = new AuthLDAP();
       $ldap->getFromDB(3);
       $result = AuthLDAP::buildLdapFilter($ldap);
-      var_dump($result);
+      $this->assertEquals($result, "(& (email=*) )");
+
+      $_SESSION['ldap_import']['interface'] = AuthLDAP::SIMPLE_INTERFACE;
+      $_SESSION['ldap_import']['criterias'] = ['name'        => 'foo',
+                                               'phone_field' => '+33454968584'];
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result, '(& (LDAP3=*foo*)(phonenumber=*+33454968584*) )');
+
+      $_SESSION['ldap_import']['criterias']['name'] = '^foo';
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result, '(& (LDAP3=foo*)(phonenumber=*+33454968584*) )');
+
+      $_SESSION['ldap_import']['criterias']['name'] = 'foo$';
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result, '(& (LDAP3=*foo)(phonenumber=*+33454968584*) )');
+
+      $_SESSION['ldap_import']['criterias']['name'] = '^foo$';
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result, '(& (LDAP3=foo)(phonenumber=*+33454968584*) )');
+
+      $_SESSION['ldap_import']['criterias'] = ['name' => '^foo$'];
+      $auth->fields['condition'] = '(objectclass=inetOrgPerson)';
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result, '(& (LDAP3=foo) )');
+
+      $_SESSION['ldap_import']['begin_date']        = '2017-04-20 00:00:00';
+      $_SESSION['ldap_import']['end_date']          = '2017-04-22 00:00:00';
+      $_SESSION['ldap_import']['criterias']['name'] = '^foo$';
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      $this->assertEquals($result,
+                          '(& (LDAP3=foo)(modifyTimestamp>=20170420000000.0Z)(modifyTimestamp<=20170422000000.0Z) )');
+
    }
 }
