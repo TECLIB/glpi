@@ -3094,7 +3094,7 @@ class AuthLDAP extends CommonDBTM {
    static function getDefault() {
       global $DB;
 
-      foreach ($DB->request('glpi_authldaps', array('is_default' => 1)) as $data) {
+      foreach ($DB->request('glpi_authldaps', ['is_default' => 1]) as $data) {
          return $data['id'];
       }
       return 0;
@@ -3308,18 +3308,16 @@ class AuthLDAP extends CommonDBTM {
    static function getAllReplicateForAMaster($master_id) {
       global $DB;
 
-      $replicates = array();
-      $query = "SELECT `id`, `host`, `port`
-                FROM `glpi_authldapreplicates`
-                WHERE `authldaps_id` = '$master_id'";
-      $result = $DB->query($query);
-
-      if ($DB->numrows($result) > 0) {
-         while ($replicate = $DB->fetch_assoc($result)) {
-            $replicates[] = array("id"   => $replicate["id"],
-                                  "host" => $replicate["host"],
-                                  "port" => $replicate["port"]);
-         }
+      $replicates = [];
+      $query = ['FIELDS' => ['id', 'host', 'port'],
+                'FROM'   => 'glpi_authldapreplicates',
+                'WHERE'  => ['authldaps_id' => $master_id]
+               ];
+      foreach ($DB->request($query) as $replicate) {
+         $replicates[] = ["id"   => $replicate["id"],
+                          "host" => $replicate["host"],
+                          "port" => $replicate["port"]
+                         ];
       }
       return $replicates;
    }

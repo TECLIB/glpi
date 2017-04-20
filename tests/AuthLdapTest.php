@@ -43,25 +43,22 @@ class AuthLDAPTest extends DbTestCase {
                   'login_field' => 'uid',
                   'phone_field' => 'phonenumber'
                  ]);
-      $ldap->add(['name'        => 'LDAP2',
-                  'is_active'   => 0,
-                  'is_default'  => 0,
-                  'basedn'      => 'ou=people,dc=mycompany',
-                  'login_field' => 'uid',
-                  'phone_field' => 'phonenumber'
+      $ldap->add(['name'         => 'LDAP2',
+                  'is_active'    => 0,
+                  'is_default'   => 0,
+                  'basedn'       => 'ou=people,dc=mycompany',
+                  'login_field'  => 'uid',
+                  'phone_field'  => 'phonenumber',
+                  'email1_field' => 'email'
                  ]);
       $ldap->add(['name'        => 'LDAP3',
                   'is_active'   => 1,
                   'is_default'  => 1,
                   'basedn'      => 'ou=people,dc=mycompany',
                   'login_field' => 'email',
-                  'phone_field' => 'phonenumber'
+                  'phone_field' => 'phonenumber',
+                  'email1_field' => 'email'
                  ]);
-   }
-
-   public function tearDown() {
-      $ldap = new AuthLDAP();
-      $ldap->deleteByCriteria(['name' => ['LIKE' => '%LDAP%'] ]);
    }
 
    /**
@@ -312,7 +309,7 @@ class AuthLDAPTest extends DbTestCase {
    * @cover AuthLDAP::getGroupsFromLDAP
    */
    public function testGetGroupsFromLDAP() {
-
+      //TODO
    }
 
    /**
@@ -359,8 +356,7 @@ class AuthLDAPTest extends DbTestCase {
    public function testBuildLdapFilter() {
       $this->addLdapServers();
 
-      $ldap = new AuthLDAP();
-      $ldap->getFromDB(3);
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP3');
       $result = AuthLDAP::buildLdapFilter($ldap);
       $this->assertEquals($result, "(& (email=*) )");
 
@@ -393,6 +389,184 @@ class AuthLDAPTest extends DbTestCase {
       $result = AuthLDAP::buildLdapFilter($ldap);
       $this->assertEquals($result,
                           '(& (LDAP3=foo)(modifyTimestamp>=20170420000000.0Z)(modifyTimestamp<=20170422000000.0Z) )');
+   }
 
+   /**
+   * @cover AuthLDAP::addTimestampRestrictions
+   */
+   public function testAddTimestampRestrictions() {
+      $result = AuthLDAP::addTimestampRestrictions('',
+                                                   '2017-04-22 00:00:00');
+      $this->assertEquals($result, "(modifyTimestamp<=20170422000000.0Z)");
+
+      $result = AuthLDAP::addTimestampRestrictions('2017-04-20 00:00:00',
+                                                   '');
+      $this->assertEquals($result, "(modifyTimestamp>=20170420000000.0Z)");
+
+      $result = AuthLDAP::addTimestampRestrictions('',
+                                                   '');
+      $this->assertEquals($result, '');
+
+      $result = AuthLDAP::addTimestampRestrictions('2017-04-20 00:00:00',
+                                                   '2017-04-22 00:00:00');
+      $this->assertEquals($result, "(modifyTimestamp>=20170420000000.0Z)(modifyTimestamp<=20170422000000.0Z)");
+   }
+
+   /**
+   * @cover AuthLDAP::getDefault
+   */
+   public function testGetDefault() {
+      //No default server defined : return 0
+      $this->assertEquals(AuthLDAP::getDefault(), 0);
+
+      //Load ldap servers
+      $this->addLdapServers();
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP3');
+      $this->assertEquals(AuthLDAP::getDefault(), $ldap->getID());
+   }
+
+   /**
+   * @cover AuthLDAP::post_updateItem
+   */
+   public function testPost_updateItem() {
+      //Load ldap servers
+      $this->addLdapServers();
+
+      //Get first lDAP server
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP1');
+
+      //Set it as default server
+      $ldap->update(['id' => $ldap->getID(), 'is_default' => 1]);
+
+      //Get first lDAP server now
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP1');
+      $this->assertEquals($ldap->fields['is_default'], 1);
+
+      //Get third ldap server (former default one)
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP3');
+      //Check that it's not the default server anymore
+      $this->assertEquals($ldap->fields['is_default'], 0);
+   }
+
+   /**
+   * @cover AuthLDAP::post_updateItem
+   */
+   public function testPost_addItem() {
+      //Load ldap servers
+      $this->addLdapServers();
+
+      $ldap     = new AuthLDAP();
+      $ldaps_id = $ldap->add(['name'        => 'LDAP4',
+                              'is_active'   => 1,
+                              'is_default'  => 1,
+                              'basedn'      => 'ou=people,dc=mycompany',
+                              'login_field' => 'email',
+                              'phone_field' => 'phonenumber'
+                             ]);
+      $ldap->getFromDB($ldaps_id);
+      $this->assertEquals($ldap->fields['is_default'], 1);
+
+      //Get third ldap server (former default one)
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP3');
+      //Check that it's not the default server anymore
+      $this->assertEquals($ldap->fields['is_default'], 0);
+   }
+
+   /**
+   * @cover AuthLDAP::prepareInputForAdd
+   */
+   public function testPrepareInputForAdd() {
+      $ldap     = new AuthLDAP();
+
+      //Create a server : as it's the first, it's the default one
+      $ldaps_id = $ldap->add(['name'        => 'LDAP1',
+                              'is_active'   => 1,
+                              'basedn'      => 'ou=people,dc=mycompany',
+                              'login_field' => 'email',
+                              'rootdn_passwd' => 'password'
+                             ]);
+      $ldap->getFromDB($ldaps_id);
+      $this->assertEquals($ldap->fields['is_default'], 1);
+      $this->assertNotEquals($ldap->fields['rootdn_passwd'], 'password');
+
+   }
+
+   /**
+   * @cover AuthLDAP::getServersWithImportByEmailActive
+   */
+   public function testGetServersWithImportByEmailActive() {
+      //No server, method return should be an empty array
+      $result = AuthLDAP::getServersWithImportByEmailActive();
+      $this->assertEmpty($result);
+
+      $this->addLdapServers();
+
+      //Return one ldap server : because LDAP2 is disabled
+      $result = AuthLDAP::getServersWithImportByEmailActive();
+      $this->assertEquals(count($result), 1);
+
+      //Enable LDAP2
+      $ldap = getItemByTypeName('AuthLDAP', 'LDAP2');
+      $ldap->update(['id' => $ldap->getID(), 'is_active' => 1]);
+
+      //Now there should be 2 enabled servers
+      $result = AuthLDAP::getServersWithImportByEmailActive();
+      $this->assertEquals(count($result), 2);
+   }
+
+   /**
+   * @cover AuthLDAP::getTabNameForItem
+   */
+   public function testgetTabNameForItem() {
+      $this->Login();
+      $this->addLdapServers();
+
+      $ldap   = getItemByTypeName('AuthLDAP', 'LDAP1');
+      $result = $ldap->getTabNameForItem($ldap);
+      $expected = [1 => 'Test',
+                   2 => 'Users',
+                   3 => 'Groups',
+                   5 => 'Advanced information',
+                   6 => 'Replicates'
+                  ];
+      $this->assertEquals($result, $expected);
+
+      $result = $ldap->getTabNameForItem($ldap, 1);
+      $this->assertEquals($result, '');
+   }
+
+   /**
+   * @cover AuthLDAP::getAllReplicateForAMaster
+   */
+   public function testGetAllReplicateForAMaster() {
+      $ldap      = new AuthLDAP();
+      $replicate = new AuthLdapReplicate();
+
+      $ldaps_id = $ldap->add(['name'        => 'LDAP1',
+                              'is_active'   => 1,
+                              'is_default'  => 0,
+                              'basedn'      => 'ou=people,dc=mycompany',
+                              'login_field' => 'uid',
+                              'phone_field' => 'phonenumber'
+                             ]);
+      $replicate->add(['name'         => 'replicate1',
+                       'host'         => 'myhost1',
+                       'port'         => 3306,
+                       'authldaps_id' => $ldaps_id]);
+      $replicate->add(['name'         => 'replicate2',
+                       'host'         => 'myhost1',
+                       'port'         => 3306,
+                       'authldaps_id' => $ldaps_id]);
+      $replicate->add(['name'         => 'replicate3',
+                       'host'         => 'myhost1',
+                       'port'         => 3306,
+                       'authldaps_id' => $ldaps_id]);
+
+      $result = $ldap->getAllReplicateForAMaster($ldaps_id);
+      $this->assertEquals(count($result), 3);
+
+
+      $result = $ldap->getAllReplicateForAMaster(100);
+      $this->assertEquals(count($result), 0);
    }
 }
