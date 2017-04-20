@@ -34,6 +34,33 @@
 
 class AuthLDAPTest extends DbTestCase {
 
+   public function setUp() {
+      $ldap = new AuthLDAP();
+      $ldap->add(['name'       => 'LDAP1',
+                  'is_active'  => 1,
+                  'is_default' => 0,
+                  'basedn'     => 'ou=people,dc=mycompany',
+                  'login_field'=> 'uid'
+                 ]);
+      $ldap->add(['name'       => 'LDAP2',
+                  'is_active'  => 0,
+                  'is_default' => 0,
+                  'basedn'     => 'ou=people,dc=mycompany',
+                  'login_field'=> 'uid'
+                 ]);
+      $ldap->add(['name'       => 'LDAP3',
+                  'is_active'  => 1,
+                  'is_default' => 1,
+                  'basedn'     => 'ou=people,dc=mycompany',
+                  'login_field'=> 'email'
+                 ]);
+   }
+
+   public function tearDown() {
+      $ldap = new AuthLDAP();
+      $ldap->deleteByCriteria(['name' =>  '%LDAP%']);
+   }
+
    /**
    * @cover AuthLDAP::getTypeName
    */
@@ -238,5 +265,95 @@ class AuthLDAPTest extends DbTestCase {
       $result = AuthLDAP::date2ldapTimeStamp();
       $this->assertEquals("19700101000000.0Z", $result);
 
+   }
+
+   /**
+   * @cover AuthLDAP::dnExistsInLdap
+   */
+   public function testDnExistsInLdap() {
+      $ldap_infos = [ ['uid'      => 'jdoe',
+                       'cn'       => 'John Doe',
+                       'user_dn'  => 'uid=jdoe, ou=people, dc=mycompany'
+                      ],
+                      ['uid'      => 'asmith',
+                       'cn'       => 'Agent Smith',
+                       'user_dn'  => 'uid=asmith, ou=people, dc=mycompany'
+                      ]
+                    ];
+
+      //Ask for a non existing user_dn : result is false
+      $this->assertFalse(AuthLDAP::dnExistsInLdap($ldap_infos, 'uid=jdupont, ou=people, dc=mycompany'));
+
+      //Ask for an dn that exists : result is the user's infos as an array
+      $result = AuthLDAP::dnExistsInLdap($ldap_infos, 'uid=jdoe, ou=people, dc=mycompany');
+      $this->assertNotEmpty($result);
+      $this->assertEquals(count($result), 3);
+
+   }
+
+   /**
+   * @cover AuthLDAP::getAllGroups
+   */
+   public function testGetAllGroups() {
+      //TODO
+   }
+
+   /**
+   * @cover AuthLDAP::getGroupCNByDn
+   */
+   public function testGetGroupCNByDn() {
+      //TODO
+   }
+
+   /**
+   * @cover AuthLDAP::getGroupsFromLDAP
+   */
+   public function testGetGroupsFromLDAP() {
+
+   }
+
+   /**
+   * @cover AuthLDAP::getLdapServers
+   */
+   public function testGetLdapServers() {
+      $ldap = new AuthLDAP();
+      //The list of ldap server show the default server in first position
+      $result = AuthLDAP::getLdapServers();
+      $this->assertEquals(count($result), 3);
+      $this->assertEquals(current($result)['name'], 'LDAP3');
+   }
+
+   /**
+   * @cover AuthLDAP::useAuthLdap
+   */
+   public function testUseAuthLdap() {
+      global $DB;
+
+      $this->assertTrue(AuthLDAP::useAuthLdap());
+      $sql = "UPDATE `glpi_authldaps` SET `is_active`='0'";
+      $DB->query($sql);
+      $this->assertFalse(AuthLDAP::useAuthLdap());
+   }
+
+   /**
+   * @cover AuthLDAP::getNumberOfServers
+   */
+   public function testGetNumberOfServers() {
+      global $DB;
+
+      $this->assertEquals(AuthLDAP::getNumberOfServers(), 2);
+      $sql = "UPDATE `glpi_authldaps` SET `is_active`='0'";
+      $DB->query($sql);
+      $this->assertEquals(AuthLDAP::getNumberOfServers(), 2);
+   }
+
+   /**
+   * @cover AuthLDAP::buildLdapFilter
+   */
+   public function testBuildLdapFilter() {
+      $ldap = new AuthLDAP();
+      $ldap->getFromDB(3);
+      $result = AuthLDAP::buildLdapFilter($ldap);
+      var_dump($result);
    }
 }

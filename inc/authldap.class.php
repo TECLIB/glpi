@@ -2414,18 +2414,7 @@ class AuthLDAP extends CommonDBTM {
     * @return boolean
     */
    static function useAuthLdap() {
-      global $DB;
-
-      //Get all the ldap directories
-      $sql = "SELECT COUNT(*)
-              FROM `glpi_authldaps`
-              WHERE `is_active` = 1";
-      $result = $DB->query($sql);
-
-      if ($DB->result($result, 0, 0) > 0) {
-         return true;
-      }
-      return false;
+      return (countElementsInTable('glpi_authldaps', ['is_active' => 1]) > 0);
    }
 
 
@@ -2990,14 +2979,7 @@ class AuthLDAP extends CommonDBTM {
     * @return integer
     */
    static function getNumberOfServers() {
-      global $DB;
-
-      $query = "SELECT COUNT(*) AS cpt
-                FROM `glpi_authldaps`
-                WHERE `is_active` = '1'";
-      $result = $DB->query($query);
-
-      return $DB->result($result, 0, 'cpt');
+      return countElementsInTable('glpi_authldaps', ['is_active' => 1]);
    }
 
 
@@ -3008,7 +2990,7 @@ class AuthLDAP extends CommonDBTM {
     *
     * @return string
     */
-   static private function buildLdapFilter(AuthLdap $authldap) {
+   static function buildLdapFilter(AuthLdap $authldap) {
       //Build search filter
       $counter = 0;
       $filter  = '';
