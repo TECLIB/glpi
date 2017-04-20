@@ -521,8 +521,11 @@ class Ticket extends CommonITILObject {
 
 
    function pre_deleteItem() {
+      global $CFG_GLPI;
 
-      NotificationEvent::raiseEvent('delete', $this);
+      if (!isset($this->input['_disablenotif']) && $CFG_GLPI['use_mailing']) {
+         NotificationEvent::raiseEvent('delete', $this);
+      }
       return true;
    }
 
@@ -1795,7 +1798,7 @@ class Ticket extends CommonITILObject {
       $this->manageValidationAdd($this->input);
 
       // Processing Email
-      if ($CFG_GLPI["use_mailing"]) {
+      if (!isset($this->input['_disablenotif']) && $CFG_GLPI["use_mailing"]) {
          // Clean reload of the ticket
          $this->getFromDB($this->fields['id']);
 
@@ -2459,7 +2462,19 @@ class Ticket extends CommonITILObject {
          'forcegroupby'       => true
       ];
 
-      $tab = array_merge($tab, TicketValidation::getSearchOptionsToAddNew());
+      $validation_options = TicketValidation::getSearchOptionsToAddNew();
+      if (!Session::haveRightsOr(
+         'ticketvalidation',
+         [
+            TicketValidation::CREATEINCIDENT,
+            TicketValidation::CREATEREQUEST
+         ]
+      )) {
+         foreach ($validation_options as &$validation_option) {
+            $validation_option['massiveaction'] = false;
+         }
+      }
+      $tab = array_merge($tab, $validation_options);
 
       $tab[] = [
          'id'                 => 'satisfaction',

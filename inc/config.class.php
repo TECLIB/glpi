@@ -1039,7 +1039,7 @@ class Config extends CommonDBTM {
 
       if (!$userpref
           || ($CFG_GLPI['show_count_on_tabs'] != -1)) {
-         echo "<td>".__('Display counts in tabs')."</td><td>";
+         echo "<td>".__('Display counters')."</td><td>";
 
          $values = array(0 => __('No'),
                          1 => __('Yes'));
@@ -2139,7 +2139,7 @@ class Config extends CommonDBTM {
             'required'  => true,
          ],
          'gd'       => [
-            'required'  => false,
+            'required'  => true,
          ],
          'ldap'       => [
             'required'  => false,
