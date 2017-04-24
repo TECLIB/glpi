@@ -8,15 +8,8 @@ php:
 env:
   - DB=mysql
 
-addons:
-  hosts:
-    - ldap-master
-    - ldap-slave
-  packages:
-    - ldap-utils
-    - slapd
-
 before_script:
+  - sudo apt install ldap-utils slapd
   - composer self-update
   - sed -e '/"php":/d' -i composer.json
   - rm -f composer.lock
@@ -81,3 +74,8 @@ notifications:
 branches:
   except:
     - /^0\..*$/
+
+addons:
+  hosts:
+    - ldap-master
+    - ldap-slave
