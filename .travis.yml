@@ -19,16 +19,15 @@ before_script:
   - php tools/cliupdate.php --config-dir=../tests |grep -q "No migration needed." || (echo "tools/cliupdate.php FAILED" && exit 1)
   - php -S localhost:8088 tests/router.php &>/dev/null &
   - phpenv config-add tests/enable-ldap.ini
+  - mkdir /tmp/slapd /tmp/slapd2
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3389/ > tests/LDAP/ldapconfig.ini
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3390/ > tests/LDAP/ldapconfig-slave.ini
-  - mkdir /tmp/slapd
-  - mkdir /tmp/slapd2
+  - cat tests/LDAP/slapd.conf | sed s/\tmp\/slapd/\/tmp\/slapd2/ > tests/LDAP/slapd-slave.conf
   - slapd -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
   - sleep 3
-  - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
-  - cat tests/LDAP/slapd.conf | sed s/\tmp\/slapd/\tmp\/slapd2/ > tests/LDAP/slapd-slave.conf
   - slapd -f tests/LDAP/slapd-slave.conf -h ldap://ldap-master:3390 &
   - sleep 3
+  - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
   - ldapadd -h ldap-slave:3390 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
 
 script:
