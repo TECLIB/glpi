@@ -242,11 +242,11 @@ class AuthLDAPTest extends DbTestCase {
 
       //Bad timestamp format
       $result = AuthLDAP::ldapStamp2UnixStamp("20161114100339");
-      $this->assertEquals('1479117819', $result);
+      $this->assertEquals('', $result);
 
       //Bad timestamp format
       $result = AuthLDAP::ldapStamp2UnixStamp("201611141003");
-      $this->assertEquals('1479117780', $result);
+      $this->assertEquals('', $result);
 
    }
 
@@ -259,10 +259,6 @@ class AuthLDAPTest extends DbTestCase {
 
       //Bad date => 01/01/1970
       $result = AuthLDAP::date2ldapTimeStamp("2017-25-25 22:35:00");
-      $this->assertEquals("19700101000000.0Z", $result);
-
-      //No date provided => 01/01/1970
-      $result = AuthLDAP::date2ldapTimeStamp();
       $this->assertEquals("19700101000000.0Z", $result);
 
    }
