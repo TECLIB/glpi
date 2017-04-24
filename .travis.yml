@@ -9,7 +9,7 @@ env:
   - DB=mysql
 
 before_script:
-  - sudo apt install ldap-utils slapd
+  - sudo apt-get install ldap-utils slapd
   - composer self-update
   - sed -e '/"php":/d' -i composer.json
   - rm -f composer.lock
