@@ -38,7 +38,7 @@ class LdapConnectionTest extends DbTestCase {
       $ldap = new AuthLDAP();
       $id = $ldap->add(['name'          => 'ldap',
                         'host'          => 'ldap-master',
-                        'port'          => '389',
+                        'port'          => '3389',
                         'login_field'   => 'uid',
                         'basedn'        => 'dc=glpi,dc=org',
                         'rootdn'        => 'cn=admin,dc=glpi,dc=org',
