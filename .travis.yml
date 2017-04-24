@@ -22,7 +22,7 @@ before_script:
   - mkdir /tmp/slapd /tmp/slapd2
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3389/ > tests/LDAP/ldapconfig.ini
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3390/ > tests/LDAP/ldapconfig-slave.ini
-  - cat tests/LDAP/slapd.conf | sed s/\tmp\/slapd/\/tmp\/slapd2/ > tests/LDAP/slapd-slave.conf
+  - cat tests/LDAP/slapd.conf | sed s'/tmp\/slapd/tmp\/slapd2/' > tests/LDAP/slapd-slave.conf
   - slapd -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
   - sleep 3
   - slapd -f tests/LDAP/slapd-slave.conf -h ldap://ldap-master:3390 &
