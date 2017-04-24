@@ -10,8 +10,9 @@ env:
 
 addons:
   apt:
-    - ldap-utils
-    - slapd
+    packages:
+      - ldap-utils
+      - slapd
   hosts:
     - ldap-master
     - ldap-slave
