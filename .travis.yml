@@ -24,9 +24,9 @@ before_script:
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3390/ > tests/LDAP/ldapconfig-slave.ini
   - cat tests/LDAP/slapd.conf | sed s'/tmp\/slapd/tmp\/slapd2/' > tests/LDAP/slapd-slave.conf
   - slapd -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
-  - sleep 3
+  - sleep 6
   - slapd -f tests/LDAP/slapd-slave.conf -h ldap://ldap-master:3390 &
-  - sleep 3
+  - sleep 6
   - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
   - ldapadd -h ldap-slave:3390 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
 
@@ -34,8 +34,7 @@ script:
   - mysql -u root -e 'select version();'
   - vendor/bin/phpunit --verbose
   - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.1" ]]; then vendor/bin/phpcs -p --standard=vendor/glpi-project/coding-standard/GlpiStandard/ --ignore=/vendor/,/plugins/,/files/,/lib/,/config/,/tests/config ./; fi
-  - killall slapd
-  
+
 #note: default maria version is 5.5 for all main php versions list exept nightly
 matrix:
   include:
