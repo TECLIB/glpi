@@ -74,6 +74,9 @@ branches:
   except:
     - /^0\..*$/
 addons:
+  apt:
+    - ldap-utils
+    - slapd
   hosts:
     - ldap-master
     - ldap-slave
