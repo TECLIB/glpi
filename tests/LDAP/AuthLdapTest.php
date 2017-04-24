@@ -561,7 +561,6 @@ class AuthLDAPTest extends DbTestCase {
       $result = $ldap->getAllReplicateForAMaster($ldaps_id);
       $this->assertEquals(count($result), 3);
 
-
       $result = $ldap->getAllReplicateForAMaster(100);
       $this->assertEquals(count($result), 0);
    }
