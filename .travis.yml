@@ -5,14 +5,13 @@ php:
   - 7.1
   - nightly
 
+services:
+  - docker
+
 env:
   - DB=mysql
 
 addons:
-  apt:
-    packages:
-      - ldap-utils
-      - slapd
   hosts:
     - ldap-master
     - ldap-slave
@@ -31,7 +30,7 @@ before_script:
   - mkdir /tmp/slapd
   - slapd -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
   - sleep 3
-  - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -w password -f tests/LDAP/ldap-glpi.ldif
+  - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
 
 script:
   - mysql -u root -e 'select version();'
