@@ -8,8 +8,13 @@ php:
 env:
   - DB=mysql
 
+addons:
+  apt:
+    packages:
+    - ldap-utils
+    - slapd
+
 before_script:
-  - sudo apt-get install ldap-utils slapd
   - composer self-update
   - sed -e '/"php":/d' -i composer.json
   - rm -f composer.lock
@@ -19,7 +24,7 @@ before_script:
   - php tools/cliupdate.php --config-dir=../tests |grep -q "No migration needed." || (echo "tools/cliupdate.php FAILED" && exit 1)
   - php -S localhost:8088 tests/router.php &>/dev/null &
   - phpenv config-add tests/enable-ldap.ini
-  - sudo sh tests/LDAP/load_ldap.sh
+  - sh tests/LDAP/load_ldap.sh
 script:
   - mysql -u root -e 'select version();'
   - vendor/bin/phpunit --verbose
