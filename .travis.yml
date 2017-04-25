@@ -19,12 +19,7 @@ before_script:
   - php tools/cliupdate.php --config-dir=../tests |grep -q "No migration needed." || (echo "tools/cliupdate.php FAILED" && exit 1)
   - php -S localhost:8088 tests/router.php &>/dev/null &
   - phpenv config-add tests/enable-ldap.ini
-  - mkdir /tmp/slapd
-  - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3389/ > tests/LDAP/ldapconfig.ini
-  - slapd -d -1 -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
-  - sleep 5
-  - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
-
+  - sudo sh tests/LDAP/load_ldap.sh
 script:
   - mysql -u root -e 'select version();'
   - vendor/bin/phpunit --verbose
