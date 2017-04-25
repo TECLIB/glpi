@@ -22,7 +22,7 @@ before_script:
   - mkdir /tmp/slapd
   - cat tests/LDAP/ldapconfig.ini.dist | sed s/389/3389/ > tests/LDAP/ldapconfig.ini
   - slapd -f tests/LDAP/slapd.conf -h ldap://ldap-master:3389 &
-  - sleep 10
+  - sleep 25
   - ldapadd -h ldap-master:3389 -D cn=admin,dc=glpi,dc=org -x -w password -f tests/LDAP/ldap-glpi.ldif
 
 script:
