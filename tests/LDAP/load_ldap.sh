@@ -1,8 +1,7 @@
 #!/bin/sh
-
-$BASEDN   = 'dc=glpi,dc=org'
-$ROOTDN   = 'cn=admin,dc=glpi,dc=org'
-$PASSWORD = `slappasswd -h {md5} -s password`
+BASEDN   = 'dc=glpi,dc=org'
+ROOTDN   = 'cn=admin,dc=glpi,dc=org'
+PASSWORD = `slappasswd -h {md5} -s password`
 
 ldapadd -Y EXTERNAL -H ldapi:/// <<EOF
 # database
