@@ -47,12 +47,6 @@ class LdapConnectionTest extends DbTestCase {
                         'is_active'     => 1,
                         'is_default'    => 1
                      ]);
-
-      $replicate = new AuthLdapReplicate();
-      $replicate->add(['authldaps_id' => $id,
-                       'host'         => 'ldap-slave',
-                       'port'         => '3390'
-                      ]);
    }
 
    /**
@@ -60,11 +54,7 @@ class LdapConnectionTest extends DbTestCase {
    * @cover LdapConnection::connectToServer
    */
    public function testConnectToServer() {
-      $ldap        = getItemByTypeName('AuthLDAP', 'ldap');
-      $replicates  = getAllDatasFromTable('glpi_authldapreplicates',
-                                          "`authldaps_id`=".$ldap->getID());
-      $this->assertEquals(count($replicates), 1);
-      $replicate   = current($replicates);
+      $ldap   = getItemByTypeName('AuthLDAP', 'ldap');
 
       //Anonymous connection
       $result = LdapConnection::connectToServer($ldap->fields['host'],
@@ -85,14 +75,5 @@ class LdapConnectionTest extends DbTestCase {
                                                 Toolbox::decrypt($ldap->fields['rootdn_passwd'], GLPIKEY)
                                                 );
       $this->assertFalse($result);
-
-      //Connection with a rootdn and password to the slave directory
-      $result = LdapConnection::connectToServer($replicate['host'],
-                                                $replicate['port'],
-                                                $ldap->fields['rootdn'],
-                                                Toolbox::decrypt($ldap->fields['rootdn_passwd'], GLPIKEY)
-                                                );
-      $this->assertNotEquals($result, false);
-
    }
 }
