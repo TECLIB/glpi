@@ -1,4 +1,8 @@
 #!/bin/bash
+
+mkdir -p $TRAVIS_BUILD_DIR/ldap
+sudo chmod -R 777 $TRAVIS_BUILD_DIR/ldap
+
 BASEDN='dc=glpi,dc=org'
 ROOTDN='cn=admin,dc=glpi,dc=org'
 PASSWORD=`slappasswd -h {md5} -s password`
@@ -11,6 +15,7 @@ objectClass: olcHdbConfig
 olcDatabase: {2}hdb
 olcRootDN: $ROOTDN
 olcRootPW: $PASSWORD
+olcDbDirectory: $TRAVIS_BUILD_DIR/ldap
 olcSuffix: $BASE_DN
 olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by dn="cn=$ADMIN_USER,$BASE_DN" write by * auth
 olcAccess: {1}to dn.base="" by dn="$ROOTDN" write by * read
