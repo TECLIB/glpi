@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mkdir -p $TRAVIS_BUILD_DIR/ldap
-sudo chmod -R 777 $TRAVIS_BUILD_DIR/ldap
+chmod -R 777 $TRAVIS_BUILD_DIR/ldap
 
 BASEDN='dc=glpi,dc=org'
 ROOTDN='cn=admin,dc=glpi,dc=org'
