@@ -34,11 +34,11 @@
 
 class LdapConnectionTest extends DbTestCase {
 
-   public function setUp() {
+   protected function setUp() {
       $ldap = new AuthLDAP();
       $id = $ldap->add(['name'          => 'ldap',
-                        'host'          => 'ldap-master',
-                        'port'          => '3389',
+                        'host'          => 'ldap',
+                        'port'          => '389',
                         'login_field'   => 'uid',
                         'basedn'        => 'dc=glpi,dc=org',
                         'rootdn'        => 'cn=admin,dc=glpi,dc=org',
@@ -47,6 +47,11 @@ class LdapConnectionTest extends DbTestCase {
                         'is_active'     => 1,
                         'is_default'    => 1
                      ]);
+   }
+
+   protected function tearDown() {
+      $ldap   = getItemByTypeName('AuthLDAP', 'ldap');
+      $ldap->delete(['id' => $ldap->getID()], true);
    }
 
    /**
@@ -59,7 +64,8 @@ class LdapConnectionTest extends DbTestCase {
       //Anonymous connection
       $result = LdapConnection::connectToServer($ldap->fields['host'],
                                                 $ldap->fields['port']);
-      $this->assertNotEquals($result, false);
+      $this->assertNotEquals(false, $result);
+      LdapConnection::close($result);
 
       //Connection with a rootdn and password
       $result = LdapConnection::connectToServer($ldap->fields['host'],
@@ -67,7 +73,8 @@ class LdapConnectionTest extends DbTestCase {
                                                 $ldap->fields['rootdn'],
                                                 Toolbox::decrypt($ldap->fields['rootdn_passwd'], GLPIKEY)
                                                 );
-      $this->assertNotEquals($result, false);
+      $this->assertNotEquals(false, $result);
+      LdapConnection::close($result);
 
       $result = LdapConnection::connectToServer('foo',
                                                 $ldap->fields['port'],
@@ -75,5 +82,32 @@ class LdapConnectionTest extends DbTestCase {
                                                 Toolbox::decrypt($ldap->fields['rootdn_passwd'], GLPIKEY)
                                                 );
       $this->assertFalse($result);
+      LdapConnection::close($result);
+   }
+
+   /**
+   * @group LDAP
+   * @cover LdapConnection::read
+   */
+   public function testRead() {
+      $ldap        = getItemByTypeName('AuthLDAP', 'ldap');
+      $connection  = new LdapConnection();
+
+      //Connection with a rootdn and password
+      $conn = $connection->connectToServer($ldap->fields['host'],
+                                           $ldap->fields['port'],
+                                           $ldap->fields['rootdn'],
+                                           Toolbox::decrypt($ldap->fields['rootdn_passwd'],
+                                                            GLPIKEY)
+                                           );
+      $this->assertNotEquals(false, $conn);
+
+      $dn     = "ou=groups, ou=usa, ou=ldap2, dc=glpi,dc=org";
+      $result = $connection->read($conn,
+                                  $dn,
+                                  "(objectClass=groupOfNames)", ['cn']);
+      var_dump($result);
+      LdapConnection::close($conn);
+
    }
 }

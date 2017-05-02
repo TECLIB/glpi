@@ -217,4 +217,28 @@ class LdapConnection {
       return ((!$check_config_value
                || ($check_config_value && $config_ldap->fields['can_support_pagesize'])));
    }
+
+   /**
+   * Close an LDAP connection
+   * @param connection the current ldap connection
+   * @return true if connection was closed (or was not opened), false otherwise
+   */
+   static function close($connection) {
+      if (!$connection) {
+         return true;
+      }
+      return ldap_unbind($connection);
+   }
+
+   /**
+    * Get ldap query results and clean them at the same time
+    *
+    * @param resource $link   link to the directory connection
+    * @param array    $result the query results
+    *
+    * @return array which contains ldap query results
+    */
+   static function get_entries_clean($link, $result) {
+      return Toolbox::clean_cross_side_scripting_deep(ldap_get_entries($link, $result));
+   }
 }
