@@ -422,9 +422,10 @@ $CFG_GLPI["kb_types"]              = ['Budget', 'Change', 'Computer',
                                            'Problem', 'Project', 'Software',
                                            'SoftwareLicense', 'Supplier',
                                            'Ticket', 'Certificate'];
-$CFG_GLPI["certificate_types"]     = ['Computer', 'Monitor',
+$CFG_GLPI["certificate_types"]     = ['Computer',
                                       'NetworkEquipment', 'Peripheral',
-                                      'Phone', 'Printer', 'Software', 'User'];
+                                      'Phone', 'Printer',
+                                      'SoftwareLicense', 'User'];
 
 $CFG_GLPI['javascript'] = [
    'central'   => [

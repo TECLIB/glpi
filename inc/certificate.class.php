@@ -602,8 +602,10 @@ class Certificate extends CommonDBTM {
 
       if ($_SESSION['glpiactiveprofile']['interface'] == 'central') {
          if (self::canUpdate()) {
-            $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'install'] = _x('button', 'Associate certificate');
-            $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'uninstall'] = _x('button', 'Dissociate certificate');
+            $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'install']
+               = _x('button', 'Associate certificate');
+            $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'uninstall']
+               = _x('button', 'Dissociate certificate');
          }
       }
       return $actions;
