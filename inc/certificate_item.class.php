@@ -180,8 +180,8 @@ class Certificate_Item extends CommonDBRelation {
    function addItem($values) {
 
       $this->add(['certificates_id' => $values["certificates_id"],
-                  'items_id' => $values["items_id"],
-                  'itemtype' => $values["itemtype"]]);
+                  'items_id'        => $values["items_id"],
+                  'itemtype'        => $values["itemtype"]]);
    }
 
    /**
