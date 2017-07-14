@@ -37,11 +37,11 @@ if (!defined('GLPI_ROOT')) {
 /**
  * Migration Class
  *
- * @since version 0.80
+ * @since 0.80
 **/
 class Migration {
 
-   private   $change     = array();
+   private   $change     = [];
    protected $version;
    private   $deb;
    private   $lastMessage;
@@ -51,6 +51,18 @@ class Migration {
       'pre'    => [],
       'post'   => []
    ];
+
+   /**
+    * List (name => value) of configuration options to add, if they're missing
+    * @var array
+    */
+   private $configs = [];
+
+   /**
+    * Configuration context
+    * @var string
+    */
+   private $context = 'core';
 
    const PRE_QUERY = 'pre';
    const POST_QUERY = 'post';
@@ -67,7 +79,7 @@ class Migration {
    /**
     * Set version
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @param integer $ver Version number
     *
@@ -84,7 +96,7 @@ class Migration {
    /**
     * Add new message
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @param string $id Area ID
     *
@@ -103,7 +115,7 @@ class Migration {
    /**
     * Flush previous displayed message in log file
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @return void
    **/
@@ -134,8 +146,8 @@ class Migration {
            "</script>\n";
 
       $this->flushLogDisplayMessage();
-      $this->lastMessage = array('time' => time(),
-                                 'msg'  => $msg);
+      $this->lastMessage = ['time' => time(),
+                            'msg'  => $msg];
 
       Html::glpi_flush();
    }
@@ -144,7 +156,7 @@ class Migration {
    /**
     * Log message for this migration
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @param string  $message Message to display
     * @param boolean $warning Is a warning
@@ -187,9 +199,9 @@ class Migration {
     *
     * @return void
    **/
-   function displayWarning($msg, $red=false) {
+   function displayWarning($msg, $red = false) {
 
-      echo ($red ? "<div class='red'><p>" : "<p><span class='b'>") .
+      echo ($red ? "<div class='migred'><p>" : "<p><span class='b'>") .
             Html::entities_deep($msg) . ($red ? "</p></div>" : "</span></p>");
 
       $this->log($msg, true);
@@ -206,7 +218,7 @@ class Migration {
     *
     * @return string
    **/
-   private function fieldFormat($type, $default_value, $nodefault=false) {
+   private function fieldFormat($type, $default_value, $nodefault = false) {
 
       $format = '';
       switch ($type) {
@@ -215,7 +227,7 @@ class Migration {
             if (!$nodefault) {
                if (is_null($default_value)) {
                   $format .= " DEFAULT '0'";
-               } else if (in_array($default_value, array('0', '1'))) {
+               } else if (in_array($default_value, ['0', '1'])) {
                   $format .= " DEFAULT '$default_value'";
                } else {
                   trigger_error(__('default_value must be 0 or 1'), E_USER_ERROR);
@@ -338,7 +350,7 @@ class Migration {
 
       $params['update']    = '';
       $params['condition'] = '';
-      $params['value']     = NULL;
+      $params['value']     = null;
       $params['nodefault'] = false;
       $params['comment']   = '';
       $params['after']     = '';
@@ -368,7 +380,7 @@ class Migration {
       }
 
       if ($format) {
-         if (!FieldExists($table, $field, false)) {
+         if (!$DB->fieldExists($table, $field, false)) {
             $this->change[$table][] = "ADD `$field` $format ".$params['comment'] ." ".
                                       $params['null'].$params['first'].$params['after'];
 
@@ -401,8 +413,9 @@ class Migration {
     * @return boolean
    **/
    function changeField($table, $oldfield, $newfield, $type, $options = []) {
+      global $DB;
 
-      $params['value']     = NULL;
+      $params['value']     = null;
       $params['nodefault'] = false;
       $params['comment']   = '';
 
@@ -418,11 +431,11 @@ class Migration {
          $params['comment'] = " COMMENT '".addslashes($params['comment'])."'";
       }
 
-      if (FieldExists($table, $oldfield, false)) {
+      if ($DB->fieldExists($table, $oldfield, false)) {
          // in order the function to be replayed
          // Drop new field if name changed
          if (($oldfield != $newfield)
-             && FieldExists($table, $newfield)) {
+             && $DB->fieldExists($table, $newfield)) {
             $this->change[$table][] = "DROP `$newfield` ";
          }
 
@@ -445,8 +458,9 @@ class Migration {
     * @return void
    **/
    function dropField($table, $field) {
+      global $DB;
 
-      if (FieldExists($table, $field, false)) {
+      if ($DB->fieldExists($table, $field, false)) {
          $this->change[$table][] = "DROP `$field`";
       }
    }
@@ -462,7 +476,7 @@ class Migration {
    function dropTable($table) {
       global $DB;
 
-      if (TableExists($table)) {
+      if ($DB->tableExists($table)) {
          $DB->query("DROP TABLE `$table`");
       }
    }
@@ -479,7 +493,7 @@ class Migration {
     *
     * @return void
    **/
-   function addKey($table, $fields, $indexname='', $type='INDEX', $len=0) {
+   function addKey($table, $fields, $indexname = '', $type = 'INDEX', $len = 0) {
 
       // si pas de nom d'index, on prend celui du ou des champs
       if (!$indexname) {
@@ -535,7 +549,7 @@ class Migration {
    function renameTable($oldtable, $newtable) {
       global $DB;
 
-      if (!TableExists("$newtable") && TableExists("$oldtable")) {
+      if (!$DB->tableExists("$newtable") && $DB->tableExists("$oldtable")) {
          $query = "RENAME TABLE `$oldtable` TO `$newtable`";
          $DB->queryOrDie($query, $this->version." rename $oldtable");
       }
@@ -545,7 +559,7 @@ class Migration {
    /**
     * Copy table for migration
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @param string $oldtable The name of the table already inside the database
     * @param string $newtable The copy of the old table
@@ -555,8 +569,8 @@ class Migration {
    function copyTable($oldtable, $newtable) {
       global $DB;
 
-      if (!TableExists($newtable)
-          && TableExists($oldtable)) {
+      if (!$DB->tableExists($newtable)
+          && $DB->tableExists($oldtable)) {
 
          // Try to do a flush tables if RELOAD privileges available
          // $query = "FLUSH TABLES `$oldtable`, `$newtable`";
@@ -576,7 +590,7 @@ class Migration {
    /**
     * Insert an entry inside a table
     *
-    * @since version 0.84
+    * @since 0.84
     *
     * @param string $table The table to alter
     * @param array  $input The elements to add inside the table
@@ -586,13 +600,13 @@ class Migration {
    function insertInTable($table, array $input) {
       global $DB;
 
-      if (TableExists("$table")
+      if ($DB->tableExists("$table")
           && is_array($input) && (count($input) > 0)) {
 
-         $fields = array();
-         $values = array();
+         $fields = [];
+         $values = [];
          foreach ($input as $field => $value) {
-            if (FieldExists($table, $field)) {
+            if ($DB->fieldExists($table, $field)) {
                $fields[] = "`$field`";
                $values[] = "'$value'";
             }
@@ -639,13 +653,18 @@ class Migration {
          $DB->queryOrDie($query['query'], $query['message']);
       }
 
-      foreach ($this->change as $table => $tab) {
+      foreach (array_keys($this->change) as $table) {
          $this->migrationOneTable($table);
       }
 
       foreach ($this->queries[self::POST_QUERY] as $query) {
          $DB->queryOrDie($query['query'], $query['message']);
       }
+
+      $this->storeConfig();
+
+      // as some tables may have be renamed, unset session matching between tables and classes
+      unset($_SESSION['glpi_table_of']);
 
       // end of global message
       $this->displayMessage(__('Task completed.'));
@@ -655,11 +674,11 @@ class Migration {
    /**
     * Register a new rule
     *
+    * @since 0.84
+    *
     * @param array $rule     Array of fields of glpi_rules
     * @param array $criteria Array of Array of fields of glpi_rulecriterias
     * @param array $actions  Array of Array of fields of glpi_ruleactions
-    *
-    * @since version 0.84
     *
     * @return integer new rule id
    **/
@@ -731,14 +750,14 @@ class Migration {
    /**
     * Update display preferences
     *
-    * @since version 0.85
+    * @since 0.85
     *
     * @param array $toadd items to add : itemtype => array of values
     * @param array $todel items to del : itemtype => array of values
     *
     * @return void
    **/
-   function updateDisplayPrefs($toadd=array(), $todel=array()) {
+   function updateDisplayPrefs($toadd = [], $todel = []) {
       global $DB;
 
       //TRANS: %s is the table or item to migrate
@@ -854,17 +873,80 @@ class Migration {
     * @return boolean
     */
    public function backupTables($tables) {
+      global $DB;
+
       $backup_tables = false;
       foreach ($tables as $table) {
          // rename new tables if exists ?
-         if (TableExists($table)) {
+         if ($DB->tableExists($table)) {
             $this->dropTable("backup_$table");
-            $this->displayWarning("$table table already exists. ".
-                                       "A backup have been done to backup_$table.");
+            $this->displayWarning(sprintf(__('%1$s table already exists. A backup have been done to %2$s'),
+                                          $table, "backup_$table"));
             $backup_tables = true;
             $this->renameTable("$table", "backup_$table");
          }
       }
+      if ($backup_tables) {
+         $this->displayWarning("You can delete backup tables if you have no need of them.", true);
+      }
       return $backup_tables;
+   }
+
+   /**
+    * Add configuration value(s) to current context; @see Migration::setContext()
+    *
+    * @since 9.2
+    *
+    * @param string|array $values Value(s) to add
+    *
+    * @return Migration
+    */
+   public function addConfig($values) {
+      $this->configs += (array)$values;
+      return $this;
+   }
+
+   /**
+    * Store configuration values that does not exists
+    *
+    * @since 9.2
+    *
+    * @return boolean
+    */
+   private function storeConfig() {
+      global $DB;
+
+      if (count($this->configs)) {
+         $existing = $DB->request(
+            "glpi_configs", [
+               'context'   => $this->context,
+               'name'      => array_keys($this->configs)
+            ]
+         );
+         foreach ($existing as $conf) {
+            unset($this->configs[$conf['name']]);
+         }
+         if (count($this->configs)) {
+            Config::setConfigurationValues($this->context, $this->configs);
+            $this->displayMessage(sprintf(
+               __('Configuration values added for %1$s.'),
+               implode(', ', array_keys($this->configs))
+            ));
+         }
+      }
+   }
+
+   /**
+    * Set configuration context
+    *
+    * @since 9.2
+    *
+    * @param string $context Configuration context
+    *
+    * @return Migration
+    */
+   public function setContext($context) {
+      $this->context = $context;
+      return $this;
    }
 }

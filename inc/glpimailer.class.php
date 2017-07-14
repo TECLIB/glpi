@@ -78,14 +78,23 @@ class GLPIMailer extends PHPMailer {
          }
 
          if (!$CFG_GLPI['smtp_check_certificate']) {
-            $this->SMTPOptions = array('ssl' => array('verify_peer'       => false,
-                                                      'verify_peer_name'  => false,
-                                                      'allow_self_signed' => true));
+            $this->SMTPOptions = ['ssl' => ['verify_peer'       => false,
+                                            'verify_peer_name'  => false,
+                                            'allow_self_signed' => true]];
+         }
+         if ($CFG_GLPI['smtp_sender'] != '') {
+            $this->Sender = $CFG_GLPI['smtp_sender'];
          }
       }
 
       if ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE) {
-         $this->do_debug = 3;
+         $this->SMTPDebug = SMTP::DEBUG_CONNECTION;
+         $this->Debugoutput = function ($message, $level) {
+            Toolbox::logInFile(
+               'mail-debug',
+               "$level - $message"
+            );
+         };
       }
    }
 

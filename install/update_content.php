@@ -197,7 +197,7 @@ function UpdateContent($DB, $duree, $rowlimit, $conv_utf8, $complete_utf8) {
 
       current_time();
       if ($duree>0 && $TPSCOUR>=$duree) {//on atteint la fin du temps imparti
-         return TRUE;
+         return true;
       }
 
       $fin = 0;
@@ -219,7 +219,7 @@ function UpdateContent($DB, $duree, $rowlimit, $conv_utf8, $complete_utf8) {
             current_time();
 
             if ($duree>0 && $TPSCOUR>=$duree) {//on atteint la fin du temps imparti
-               return TRUE;
+               return true;
             }
 
          } else {
@@ -235,7 +235,7 @@ function UpdateContent($DB, $duree, $rowlimit, $conv_utf8, $complete_utf8) {
       current_time();
 
       if ($duree>0 && $TPSCOUR>=$duree) {//on atteint la fin du temps imparti
-         return TRUE;
+         return true;
       }
 
    }
@@ -247,7 +247,7 @@ function UpdateContent($DB, $duree, $rowlimit, $conv_utf8, $complete_utf8) {
    }
 
    $offsettable = -1;
-   return TRUE;
+   return true;
 }
 
 //########################### Script start ################################
@@ -327,11 +327,11 @@ if (isset($offsettable)) {
 $conv_utf8     = false;
 $complete_utf8 = true;
 $config_table  = "glpi_config";
-if (TableExists("glpi_configs")) {
+if ($DB->tableExists("glpi_configs")) {
    $config_table = "glpi_configs";
 }
 
-if (!FieldExists($config_table, "utf8_conv", false)) {
+if (!$DB->fieldExists($config_table, "utf8_conv", false)) {
    $conv_utf8 = true;
 } else {
    $query = "SELECT `utf8_conv`

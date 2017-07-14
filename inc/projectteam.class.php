@@ -60,7 +60,7 @@ class ProjectTeam extends CommonDBRelation {
    static public $items_id_2          = 'items_id';
    static public $checkItem_2_Rights  = self::DONT_CHECK_ITEM_RIGHTS;
 
-   static public $available_types     = array('User', 'Group', 'Supplier', 'Contact');
+   static public $available_types     = ['User', 'Group', 'Supplier', 'Contact'];
 
 
    /**
@@ -71,7 +71,7 @@ class ProjectTeam extends CommonDBRelation {
    }
 
 
-   static function getTypeName($nb=0) {
+   static function getTypeName($nb = 0) {
       return _n('Project team', 'Project teams', $nb);
    }
 
@@ -87,9 +87,9 @@ class ProjectTeam extends CommonDBRelation {
    /**
     * @see CommonGLPI::getTabNameForItem()
    **/
-   function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
+   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
 
-      if (!$withtemplate && self::canView()) {
+      if (self::canView()) {
          $nb = 0;
          switch ($item->getType()) {
             case 'Project' :
@@ -110,16 +110,39 @@ class ProjectTeam extends CommonDBRelation {
    **/
    static function countForProject(Project $item) {
 
-      return countElementsInTable(array('glpi_projectteams'), ['glpi_projectteams.projects_id' => $item->getField('id')]);
+      return countElementsInTable(['glpi_projectteams'], ['glpi_projectteams.projects_id' => $item->getField('id')]);
    }
 
 
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
+   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
 
       switch ($item->getType()) {
          case 'Project' :
             $item->showTeam($item);
             return true;
+      }
+   }
+
+   /**
+    * Duplicate all teams from a project template to his clone
+    *
+    * @since version 9.2
+    *
+    * @param integer $oldid        ID of the item to clone
+    * @param integer $newid        ID of the item cloned
+    **/
+   static function cloneProjectTeam ($oldid, $newid) {
+      global $DB;
+
+      $query  = "SELECT *
+                 FROM `glpi_projectteams`
+                 WHERE `projects_id` = '$oldid'";
+      foreach ($DB->request($query) as $data) {
+         $cd                  = new self();
+         unset($data['id']);
+         $data['projects_id'] = $newid;
+         $data                = Toolbox::addslashes_deep($data);
+         $cd->add($data);
       }
    }
 
@@ -132,14 +155,14 @@ class ProjectTeam extends CommonDBRelation {
    static function getTeamFor($projects_id) {
       global $DB;
 
-      $team = array();
+      $team = [];
       $query = "SELECT `glpi_projectteams`.*
                 FROM `glpi_projectteams`
                 WHERE `projects_id` = '$projects_id'";
 
       foreach ($DB->request($query) as $data) {
          if (!isset($team[$data['itemtype']])) {
-            $team[$data['itemtype']] = array();
+            $team[$data['itemtype']] = [];
          }
          $team[$data['itemtype']][] = $data;
       }
@@ -147,7 +170,7 @@ class ProjectTeam extends CommonDBRelation {
       // Define empty types
       foreach (static::$available_types as $type) {
          if (!isset($team[$type])) {
-            $team[$type] = array();
+            $team[$type] = [];
          }
       }
 

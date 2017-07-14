@@ -164,6 +164,17 @@ function getItemTypeForTable($table) {
    }
 }
 
+/**
+ * Return ItemType for a foreign key
+ *
+ * @param string $fkname
+ *
+ * @return string ItemType name for the fkname parameter
+ */
+function getItemtypeForForeignKeyField($fkname) {
+   $table = getTableNameForForeignKeyField($fkname);
+   return getItemTypeForTable($table);
+}
 
 /**
  * Return ItemType  for a table
@@ -226,7 +237,10 @@ function getTableForItemType($itemtype) {
  * @return itemtype object or false if class does not exists
 **/
 function getItemForItemtype($itemtype) {
-
+   if ($itemtype === 'Event') {
+      //to avoid issues when pecl-event is installed...
+      $itemtype = 'Glpi\\Event';
+   }
    if (class_exists($itemtype)) {
       return new $itemtype();
    }
@@ -243,7 +257,7 @@ function getItemForItemtype($itemtype) {
 **/
 function getPlural($string) {
 
-   $rules = array(//'singular' => 'plural'
+   $rules = [//'singular' => 'plural'
                   'criterias$'         =>'criterias',// Special case (criterias) when getPLural is called on already plural form
                   'ch$'                =>'ches',
                   'ches$'              =>'ches',
@@ -260,7 +274,7 @@ function getPlural($string) {
                   'x$'                 =>'xes',
                   // 's$'                 =>'ses',
                   '([^s])$'            => '\1s',   // Add at the end if not exists
-                  );
+                  ];
 
    foreach ($rules as $singular => $plural) {
       $string = preg_replace("/$singular/", "$plural", $string, -1, $count);
@@ -281,7 +295,7 @@ function getPlural($string) {
 **/
 function getSingular($string) {
 
-   $rules = array(//'plural' => 'singular'
+   $rules = [//'plural' => 'singular'
                   'ches$'             => 'ch',
                   'ch$'               => 'ch',
                   'shes$'             => 'sh',
@@ -295,7 +309,7 @@ function getSingular($string) {
                   '([^aeiou])ies$'    => '\1y', // special case : category
                   '([^aeiou])y$'      => '\1y', // special case : category
                   'xes$'              =>'x',
-                  's$'                => ''); // Add at the end if not exists
+                  's$'                => '']; // Add at the end if not exists
 
    foreach ($rules as  $plural => $singular) {
       $string = preg_replace("/$plural/", "$singular", $string, -1, $count);
@@ -315,7 +329,7 @@ function getSingular($string) {
  *
  * @return int nb of elements in table
 **/
-function countElementsInTable($table, $condition="") {
+function countElementsInTable($table, $condition = "") {
    global $DB;
 
    if (!is_array($condition)) {
@@ -340,7 +354,7 @@ function countElementsInTable($table, $condition="") {
  *
  * @return int nb of elements in table
 **/
-function countDistinctElementsInTable($table, $field, $condition="") {
+function countDistinctElementsInTable($table, $field, $condition = "") {
    global $DB;
 
    if (is_array($table)) {
@@ -369,7 +383,7 @@ function countDistinctElementsInTable($table, $field, $condition="") {
  *
  * @return int nb of elements in table
 **/
-function countElementsInTableForMyEntities($table, $condition='') {
+function countElementsInTableForMyEntities($table, $condition = '') {
 
    /// TODO clean it / maybe include when review of SQL requests
    $itemtype = getItemTypeForTable($table);
@@ -394,7 +408,7 @@ function countElementsInTableForMyEntities($table, $condition='') {
  *
  * @return int nb of elements in table
 **/
-function countElementsInTableForEntity($table, $entity, $condition='') {
+function countElementsInTableForEntity($table, $entity, $condition = '') {
 
    /// TODO clean it / maybe include when review of SQL requests
    $itemtype = getItemTypeForTable($table);
@@ -420,16 +434,16 @@ function countElementsInTableForEntity($table, $entity, $condition='') {
  *
  * @return array containing all the datas
 **/
-function getAllDatasFromTable($table, $condition='', $usecache=false, $order='') {
+function getAllDatasFromTable($table, $condition = '', $usecache = false, $order = '') {
    global $DB;
 
-   static $cache = array();
+   static $cache = [];
 
    if (empty($condition) && empty($order) && $usecache && isset($cache[$table])) {
       return $cache[$table];
    }
 
-   $datas = array();
+   $datas = [];
    $query = "SELECT *
              FROM `$table` ";
 
@@ -465,7 +479,7 @@ function getAllDatasFromTable($table, $condition='', $usecache=false, $order='')
  *
  * @see getTreeValueCompleteName
 **/
-function getTreeLeafValueName($table, $ID, $withcomment=false, $translate=true) {
+function getTreeLeafValueName($table, $ID, $withcomment = false, $translate = true) {
    global $DB;
 
    $name    = "";
@@ -520,8 +534,8 @@ function getTreeLeafValueName($table, $ID, $withcomment=false, $translate=true) 
    }
 
    if ($withcomment) {
-      return array("name"    => $name,
-                   "comment" => $comment);
+      return ["name"    => $name,
+                   "comment" => $comment];
    }
    return $name;
 }
@@ -540,7 +554,7 @@ function getTreeLeafValueName($table, $ID, $withcomment=false, $translate=true) 
  *
  * @see getTreeLeafValueName
 **/
-function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=true, $tooltip=true) {
+function getTreeValueCompleteName($table, $ID, $withcomment = false, $translate = true, $tooltip = true) {
    global $DB;
 
    $name    = "";
@@ -602,8 +616,8 @@ function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=tr
    }
 
    if ($withcomment) {
-      return array("name"    => $name,
-                   "comment" => $comment);
+      return ["name"    => $name,
+                   "comment" => $comment];
    }
    return $name;
 }
@@ -620,7 +634,7 @@ function getTreeValueCompleteName($table, $ID, $withcomment=false, $translate=tr
  *
  * @return string name
 **/
-function getTreeValueName($table, $ID, $wholename="", $level=0) {
+function getTreeValueName($table, $ID, $wholename = "", $level = 0) {
    global $DB;
 
    $parentIDfield = getForeignKeyFieldForTable($table);
@@ -646,15 +660,15 @@ function getTreeValueName($table, $ID, $wholename="", $level=0) {
          $name                   = $tmpname. $name;
       }
    }
-   return array($name, $level);
+   return [$name, $level];
 }
 
 
 /**
  * Get the ancestors of an item in a tree dropdown
  *
- * @param $table     string   table name
- * @param $items_id  integer  The ID of the item
+ * @param string       $table    Table name
+ * @param array|string $items_id The IDs of the items
  *
  * @return array of IDs of the ancestors
 **/
@@ -662,69 +676,81 @@ function getAncestorsOf($table, $items_id) {
    global $DB;
 
    // IDs to be present in the final array
-   $id_found      = array();
+   $id_found      = [];
    $parentIDfield = getForeignKeyFieldForTable($table);
-   $use_cache     = FieldExists($table, "ancestors_cache");
+   $use_cache     = $DB->fieldExists($table, "ancestors_cache");
 
-   if ($use_cache
-       && ($items_id > 0)) {
+   if (!is_array($items_id)) {
+      $items_id = (array)$items_id;
+   }
 
-      $query = "SELECT `ancestors_cache`, `$parentIDfield`
-                FROM `$table`
-                WHERE `id` = '$items_id'";
+   if ($use_cache) {
+      $iterator = $DB->request([
+         'SELECT' => ['id', 'ancestors_cache', $parentIDfield],
+         'FROM'   => $table,
+         'WHERE'  => ['id' => $items_id]
+      ]);
 
-      if (($result = $DB->query($query))
-          && ($DB->numrows($result) > 0)) {
-         $ancestors = trim($DB->result($result, 0, 0));
-         $parent    = $DB->result($result, 0, 1);
+      while ($row = $iterator->next()) {
+         if ($row['id'] > 0) {
+            $ancestors = $row['ancestors_cache'];
+            $parent    = $row[$parentIDfield];
 
-         // Return datas from cache in DB
-         if (!empty($ancestors)) {
-            return importArrayFromDB($ancestors, true);
+            // Return datas from cache in DB
+            if (!empty($ancestors)) {
+               $id_found = array_replace($id_found, importArrayFromDB($ancestors, true));
+            } else {
+               $loc_id_found = [];
+               // Recursive solution for table with-cache
+               if ($parent > 0) {
+                  $loc_id_found = getAncestorsOf($table, $parent);
+               }
+
+               // ID=0 only exists for Entities
+               if (($parent > 0)
+                   || ($table == 'glpi_entities')) {
+                  $loc_id_found[$parent] = $parent;
+               }
+
+               // Store cache datas in DB
+               $query = "UPDATE `$table`
+                      SET `ancestors_cache` = '".exportArrayToDB($loc_id_found)."'
+                      WHERE `id` = '".$row['id']."'";
+               $DB->query($query);
+
+               $id_found = array_replace($id_found, $loc_id_found);
+            }
          }
-
-         // Recursive solution for table with-cache
-         if ($parent > 0) {
-            $id_found = getAncestorsOf($table, $parent);
-         }
-
-         // ID=0 only exists for Entities
-         if (($parent > 0)
-             || ($table == 'glpi_entities')) {
-            $id_found[$parent] = $parent;
-         }
-
-         // Store cache datas in DB
-         $query = "UPDATE `$table`
-                   SET `ancestors_cache` = '".exportArrayToDB($id_found)."'
-                   WHERE `id` = '$items_id'";
-         $DB->query($query);
       }
 
       return $id_found;
    }
 
-   // Get the leafs of previous founded item
+   // Get the ancestors
    // iterative solution for table without cache
-   $IDf = $items_id;
-   while ($IDf > 0) {
-      // Get next elements
-      $query = "SELECT `$parentIDfield`
-                FROM `$table`
-                WHERE `id` = '$IDf'";
+   foreach ($items_id as $id) {
+      $IDf = $id;
+      while ($IDf > 0) {
+         // Get next elements
+         $iterator = $DB->request([
+            'SELECT' => [$parentIDfield],
+            'FROM'   => $table,
+            'WHERE'  => ['id' => $IDf]
+         ]);
 
-      $result = $DB->query($query);
-      if ($DB->numrows($result)>0) {
-         $IDf = $DB->result($result, 0, 0);
-      } else {
-         $IDf = 0;
-      }
+         if (count($iterator) > 0) {
+            $result = $iterator->current();
+            $IDf = $result[$parentIDfield];
+         } else {
+            $IDf = 0;
+         }
 
-      if (!isset($id_found[$IDf])
-          && (($IDf > 0) || ($table == 'glpi_entities'))) {
-         $id_found[$IDf] = $IDf;
-      } else {
-         $IDf = 0;
+         if (!isset($id_found[$IDf])
+               && (($IDf > 0) || ($table == 'glpi_entities'))) {
+            $id_found[$IDf] = $IDf;
+         } else {
+            $IDf = 0;
+         }
       }
    }
 
@@ -744,7 +770,7 @@ function getSonsOf($table, $IDf) {
    global $DB;
 
    $parentIDfield = getForeignKeyFieldForTable($table);
-   $use_cache     = FieldExists($table, "sons_cache");
+   $use_cache     = $DB->fieldExists($table, "sons_cache");
 
    if ($use_cache
        && ($IDf > 0)) {
@@ -765,7 +791,7 @@ function getSonsOf($table, $IDf) {
    // IDs to be present in the final array
    $id_found[$IDf] = $IDf;
    // current ID found to be added
-   $found = array();
+   $found = [];
    // First request init the  varriables
    $query = "SELECT `id`
              FROM `$table`
@@ -780,7 +806,7 @@ function getSonsOf($table, $IDf) {
       }
    }
 
-   // Get the leafs of previous founded item
+   // Get the leafs of previous found item
    while (count($found) > 0) {
       $first = true;
       // Get next elements
@@ -790,7 +816,7 @@ function getSonsOf($table, $IDf) {
 
       // CLear the found array
       unset($found);
-      $found = array();
+      $found = [];
 
       $result = $DB->query($query);
       if ($DB->numrows($result) > 0) {
@@ -846,9 +872,9 @@ function getTreeForItem($table, $IDf) {
    $parentIDfield = getForeignKeyFieldForTable($table);
 
    // IDs to be present in the final array
-   $id_found = array();
+   $id_found = [];
    // current ID found to be added
-   $found = array();
+   $found = [];
 
    // First request init the  varriables
    $query = "SELECT *
@@ -876,7 +902,7 @@ function getTreeForItem($table, $IDf) {
                 ORDER BY `name`";
       // CLear the found array
       unset($found);
-      $found = array();
+      $found = [];
 
       $result = $DB->query($query);
       if ($DB->numrows($result) > 0) {
@@ -906,7 +932,7 @@ function getTreeForItem($table, $IDf) {
 **/
 function contructTreeFromList($list, $root) {
 
-   $tree = array();
+   $tree = [];
    foreach ($list as $ID => $data) {
       if ($data['parent'] == $root) {
          unset($list[$ID]);
@@ -926,9 +952,9 @@ function contructTreeFromList($list, $root) {
  *
  * @return list of items in the tree
 **/
-function contructListFromTree($tree, $parent=0) {
+function contructListFromTree($tree, $parent = 0) {
 
-   $list = array();
+   $list = [];
    foreach ($tree as $root => $data) {
       $list[$root] = $parent;
 
@@ -956,7 +982,7 @@ function contructListFromTree($tree, $parent=0) {
  *
  * @return string the query
 **/
-function getRealQueryForTreeItem($table, $IDf, $reallink="") {
+function getRealQueryForTreeItem($table, $IDf, $reallink = "") {
    global $DB;
 
    if (empty($IDf)) {
@@ -1011,7 +1037,7 @@ function regenerateTreeCompleteName($table) {
  *
  * @return the next ID, -1 if not exist
 **/
-function getNextItem($table, $ID, $condition="", $nextprev_item="name") {
+function getNextItem($table, $ID, $condition = "", $nextprev_item = "name") {
    global $DB, $CFG_GLPI;
 
    if (empty($nextprev_item)) {
@@ -1100,7 +1126,7 @@ function getNextItem($table, $ID, $condition="", $nextprev_item="name") {
  *
  * @return the previous ID, -1 if not exist
 **/
-function getPreviousItem($table, $ID, $condition="", $nextprev_item="name") {
+function getPreviousItem($table, $ID, $condition = "", $nextprev_item = "name") {
    global $DB, $CFG_GLPI;
 
    if (empty($nextprev_item)) {
@@ -1191,18 +1217,18 @@ function getPreviousItem($table, $ID, $condition="", $nextprev_item="name") {
  *
  *@return string : formatted username
 **/
-function formatUserName($ID, $login, $realname, $firstname, $link=0, $cut=0, $force_config=false) {
+function formatUserName($ID, $login, $realname, $firstname, $link = 0, $cut = 0, $force_config = false) {
    global $CFG_GLPI;
 
    $before = "";
    $after  = "";
 
-   $order = $CFG_GLPI["names_format"];
+   $order = isset($CFG_GLPI["names_format"]) ? $CFG_GLPI["names_format"] : User::REALNAME_BEFORE;
    if (isset($_SESSION["glpinames_format"]) && !$force_config) {
       $order = $_SESSION["glpinames_format"];
    }
 
-   $id_visible = $CFG_GLPI["is_ids_visible"];
+   $id_visible = isset($CFG_GLPI["is_ids_visible"]) ? $CFG_GLPI["is_ids_visible"] : 0;
    if (isset($_SESSION["glpiis_ids_visible"]) && !$force_config) {
       $id_visible = $_SESSION["glpiis_ids_visible"];
    }
@@ -1252,14 +1278,14 @@ function formatUserName($ID, $login, $realname, $firstname, $link=0, $cut=0, $fo
  *
  *@return string : username string (realname if not empty and name if realname is empty).
 **/
-function getUserName($ID, $link=0) {
+function getUserName($ID, $link = 0) {
    global $DB, $CFG_GLPI;
 
    $user = "";
    if ($link == 2) {
-      $user = array("name"    => "",
+      $user = ["name"    => "",
                     "link"    => "",
-                    "comment" => "");
+                    "comment" => ""];
    }
 
    if ($ID) {
@@ -1269,9 +1295,9 @@ function getUserName($ID, $link=0) {
       $result = $DB->query($query);
 
       if ($link == 2) {
-         $user = array("name"    => "",
+         $user = ["name"    => "",
                        "comment" => "",
-                       "link"    => "");
+                       "link"    => ""];
       }
 
       if ($DB->numrows($result) == 1) {
@@ -1284,47 +1310,47 @@ function getUserName($ID, $link=0) {
             $user["link"]    = $CFG_GLPI["root_doc"]."/front/user.form.php?id=".$ID;
             $user['comment'] = '';
 
-            $comments        = array();
-            $comments[]      = array('name'  => __('Name'),
-                                     'value' => $username);
+            $comments        = [];
+            $comments[]      = ['name'  => __('Name'),
+                                     'value' => $username];
             // Ident only if you have right to read user
             if (session::haveRight('user', READ)) {
-               $comments[]      = array('name'  => __('Login'),
-                                        'value' => $data["name"]);
+               $comments[]      = ['name'  => __('Login'),
+                                        'value' => $data["name"]];
             }
 
             $email           = UserEmail::getDefaultForUser($ID);
             if (!empty($email)) {
-               $comments[] = array('name'  => __('Email'),
-                                   'value' => $email);
+               $comments[] = ['name'  => __('Email'),
+                                   'value' => $email];
             }
 
             if (!empty($data["phone"])) {
-               $comments[] = array('name'  => __('Phone'),
-                                   'value' => $data["phone"]);
+               $comments[] = ['name'  => __('Phone'),
+                                   'value' => $data["phone"]];
             }
 
             if (!empty($data["mobile"])) {
-               $comments[] = array('name'  => __('Mobile phone'),
-                                   'value' => $data["mobile"]);
+               $comments[] = ['name'  => __('Mobile phone'),
+                                   'value' => $data["mobile"]];
             }
 
             if ($data["locations_id"] > 0) {
-               $comments[] = array('name'  => __('Location'),
+               $comments[] = ['name'  => __('Location'),
                                    'value' => Dropdown::getDropdownName("glpi_locations",
-                                                                        $data["locations_id"]));
+                                                                        $data["locations_id"])];
             }
 
             if ($data["usertitles_id"] > 0) {
-               $comments[] = array('name'  => _x('person', 'Title'),
+               $comments[] = ['name'  => _x('person', 'Title'),
                                    'value' => Dropdown::getDropdownName("glpi_usertitles",
-                                                                        $data["usertitles_id"]));
+                                                                        $data["usertitles_id"])];
             }
 
             if ($data["usercategories_id"] > 0) {
-               $comments[] = array('name'  => __('Category'),
+               $comments[] = ['name'  => __('Category'),
                                    'value' => Dropdown::getDropdownName("glpi_usercategories",
-                                                                        $data["usercategories_id"]));
+                                                                        $data["usercategories_id"])];
             }
             if (count($comments)) {
                $user['comment'] = $user['comment'];
@@ -1354,26 +1380,17 @@ function getUserName($ID, $link=0) {
 /**
  * Verify if a DB table exists
  *
- *@param $tablename string : Name of the table we want to verify.
+ * @param $tablename string : Name of the table we want to verify.
  *
- *@return bool : true if exists, false elseway.
+ * @return bool : true if exists, false elseway.
+ *
+ * @deprecated 9.2 Use DB::tableExists()
 **/
 function TableExists($tablename) {
    global $DB;
 
-   // Get a list of tables contained within the database.
-   $result = $DB->list_tables("%".$tablename."%");
-
-   if ($rcount = $DB->numrows($result)) {
-      while ($data = $DB->fetch_row($result)) {
-         if ($data[0] === $tablename) {
-            return true;
-         }
-      }
-   }
-
-   $DB->free_result($result);
-   return false;
+   Toolbox::logDebug('TableExists() function is deprecated');
+   return $DB->tableExists($tablename);
 }
 
 
@@ -1386,21 +1403,11 @@ function TableExists($tablename) {
  *
  *@return bool : true if exists, false elseway.
 **/
-function FieldExists($table, $field, $usecache=true) {
+function FieldExists($table, $field, $usecache = true) {
    global $DB;
 
-   if (!TableExists($table)) {
-      trigger_error("Table $table does not exists", E_USER_WARNING);
-      return false;
-   }
-
-   if ($fields = $DB->list_fields($table, $usecache)) {
-      if (isset($fields[$field])) {
-         return true;
-      }
-      return false;
-   }
-   return false;
+   Toolbox::logDebug('FieldExists() function is deprecated');
+   return $DB->fieldExists($table, $field, $usecache);
 }
 
 
@@ -1415,7 +1422,7 @@ function FieldExists($table, $field, $usecache=true) {
 function isIndex($table, $field) {
    global $DB;
 
-   if (!TableExists($table)) {
+   if (!$DB->tableExists($table)) {
       trigger_error("Table $table does not exists", E_USER_WARNING);
       return false;
    }
@@ -1444,7 +1451,7 @@ function isIndex($table, $field) {
  *
  * @return new auto string
 **/
-function autoName($objectName, $field, $isTemplate, $itemtype, $entities_id=-1) {
+function autoName($objectName, $field, $isTemplate, $itemtype, $entities_id = -1) {
    global $DB, $CFG_GLPI;
 
    $len = Toolbox::strlen($objectName);
@@ -1459,19 +1466,19 @@ function autoName($objectName, $field, $isTemplate, $itemtype, $entities_id=-1) 
 
       if (preg_match( "/\\#{1,10}/", $autoNum, $mask)) {
          $global  = ((strpos($autoNum, '\\g') !== false) && ($itemtype != 'Infocom')) ? 1 : 0;
-         $autoNum = str_replace(array('\\y',
+         $autoNum = str_replace(['\\y',
                                       '\\Y',
                                       '\\m',
                                       '\\d',
                                       '_','%',
-                                      '\\g'),
-                                array(date('y'),
+                                      '\\g'],
+                                [date('y'),
                                       date('Y'),
                                       date('m'),
                                       date('d'),
                                       '\\_',
                                       '\\%',
-                                      ''),
+                                      ''],
                                 $autoNum);
          $mask = $mask[0];
          $pos  = strpos($autoNum, $mask) + 1;
@@ -1481,8 +1488,8 @@ function autoName($objectName, $field, $isTemplate, $itemtype, $entities_id=-1) 
          if ($global == 1) {
             $query = "";
             $first = 1;
-            $types = array('Computer', 'Monitor', 'NetworkEquipment', 'Peripheral', 'Phone',
-                           'Printer');
+            $types = ['Computer', 'Monitor', 'NetworkEquipment', 'Peripheral', 'Phone',
+                           'Printer'];
 
             foreach ($types as $t) {
                $table = getTableForItemType($t);
@@ -1530,12 +1537,12 @@ function autoName($objectName, $field, $isTemplate, $itemtype, $entities_id=-1) 
          } else {
             $newNo = 0;
          }
-         $objectName = str_replace(array($mask,
+         $objectName = str_replace([$mask,
                                          '\\_',
-                                         '\\%'),
-                                   array(Toolbox::str_pad($newNo, $len, '0', STR_PAD_LEFT),
+                                         '\\%'],
+                                   [Toolbox::str_pad($newNo, $len, '0', STR_PAD_LEFT),
                                          '_',
-                                         '%'),
+                                         '%'],
                                    $autoNum);
       }
    }
@@ -1625,7 +1632,7 @@ function importArrayFromDB($DATA) {
 
    // Use old scheme to decode
    if (!is_array($TAB)) {
-      $TAB = array();
+      $TAB = [];
 
       foreach (explode(" ", $DATA) as $ITEM) {
          $A = explode("=>", $ITEM);
@@ -1692,8 +1699,8 @@ function getDbRelations() {
  *
  * @return String : the WHERE clause to restrict
 **/
-function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$value='',
-                                    $is_recursive=false, $complete_request=false) {
+function getEntitiesRestrictRequest($separator = "AND", $table = "", $field = "", $value = '',
+                                    $is_recursive = false, $complete_request = false) {
 
    $query = $separator ." ( ";
 
@@ -1737,12 +1744,9 @@ function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$valu
    }
 
    if ($is_recursive) {
-      $ancestors = array();
+      $ancestors = [];
       if (is_array($value)) {
-         foreach ($value as $val) {
-            $ancestors = array_unique(array_merge(getAncestorsOf("glpi_entities", $val),
-                                                  $ancestors));
-         }
+         $ancestors = getAncestorsOf("glpi_entities", $value);
          $ancestors = array_diff($ancestors, $value);
 
       } else if (strlen($value) == 0) {
@@ -1784,8 +1788,8 @@ function getEntitiesRestrictRequest($separator="AND", $table="", $field="",$valu
  *
  * @return array of criteria
  **/
-function getEntitiesRestrictCriteria($table='', $field='', $value='',
-                                     $is_recursive=false, $complete_request=false) {
+function getEntitiesRestrictCriteria($table = '', $field = '', $value = '',
+                                     $is_recursive = false, $complete_request = false) {
 
    // !='0' needed because consider as empty
    if (!$complete_request
@@ -1822,7 +1826,7 @@ function getEntitiesRestrictCriteria($table='', $field='', $value='',
    }
 
    if ($is_recursive) {
-      $ancestors = array();
+      $ancestors = [];
       if (is_array($value)) {
          foreach ($value as $val) {
             $ancestors = array_unique(array_merge(getAncestorsOf('glpi_entities', $val),

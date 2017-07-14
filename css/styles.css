@@ -42,6 +42,8 @@ body {
    padding: 0;
    background:  #f8f7f3;
    position: relative;
+   height: auto;
+   min-height: 100%;
 }
 
 body.iframed {
@@ -119,6 +121,10 @@ sup {
 .floatleft {
    position: relative;
    float: left;
+}
+
+.nofloat {
+   float: none!important;
 }
 
 .center-h {
@@ -218,6 +224,80 @@ hr {
    -webkit-user-select: none;
    -ms-user-select: none;
    user-select: none;
+}
+
+/* ################--------------- Fuzzy ---------------#################### */
+
+#fuzzysearch {
+   position: fixed;
+   width: 500px;
+   min-height: 50px;
+   top: 30%;
+   left: 50%;
+   margin-top: -100px;
+   margin-left: -250px;
+   background: #FFF;
+   z-index: 200;
+}
+
+#fuzzysearch input {
+   border: 2px solid #CCC;
+   font-size: 1.5em;
+   border-radius: 3px;
+   height: 50px;
+   width: calc(100% - 20px);
+   margin: 10px;
+   box-sizing: border-box;
+}
+
+#fuzzysearch .results:not(:empty) {
+   width: calc(100% - 20px);
+   margin: 10px;
+   box-sizing: border-box;
+   height: 300px;
+   overflow-y: auto;
+   overflow-x: none;
+}
+
+#fuzzysearch .results li:nth-child(odd) {
+   background: #E8E8E8;
+}
+
+#fuzzysearch .results li.selected,
+#fuzzysearch .results li:hover {
+   background: #848484;
+   color: #FFF;
+}
+
+#fuzzysearch .results a {
+   padding: 10px;
+   font-size: 1.3em;
+   color: inherit;
+   font-weight: normal;
+   line-height: 100%;
+   display: block;
+}
+
+#fuzzysearch .fa-close {
+   position: absolute;
+   top: 0;
+   right: -30px;
+   color: #848484;
+   cursor: pointer;
+   background: #FFF;
+   width: 30px;
+   height: 30px;
+   padding: 3px 6px;
+   box-sizing: border-box;
+}
+
+@media screen and (max-width: 700px) {
+   #fuzzysearch {
+      width: 85%;
+      top: 20%;
+      left: 0;
+      margin: 0 5%
+   }
 }
 
 /* ################--------------- Tabs ---------------#################### */
@@ -340,7 +420,7 @@ select {
 }
 
 
-textarea, input:not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]) {
+textarea, input:not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not(.select2-input) {
    background-color:#FCFCFC;
    color: black;
    border: 1px solid #D3D3D3;
@@ -548,6 +628,16 @@ input.submit[type=reset] {
 .pointer.disabled:hover,
 .pointer.disabled {
    opacity: .3;
+}
+
+#page .protected {
+   padding-right: 50px;
+}
+
+#page .fa.disclose {
+   position: relative;
+   left: -40px;
+   top: 2px
 }
 
 /* ################--------------- Layout  ---------------#################### */
@@ -2219,10 +2309,9 @@ a.icon_nav_move:hover img {
 /* ################--------------- Login Null Header  ---------------#################### */
 
 #firstboxlogin {
-   position: absolute;
-   top: 0;
-   bottom: 0;
    width: 100%;
+   min-height: 100%;
+   min-height: 100vh; /* double min-height, some old browser don't have vh units support*/
 }
 
 #logo_login {
@@ -3872,6 +3961,29 @@ input[type=checkbox].toggle_comments:checked ~ ul {
    display: block;
 }
 
+.copy_to_clipboard_wrapper,
+.copy_to_clipboard_wrapper * {
+   cursor: pointer;
+}
+
+.copy_to_clipboard_wrapper:after {
+   font-family: 'FontAwesome';
+   position: relative;
+   left: -15px;
+   top: 1px;
+   content: "\f0ea";
+   color: #7F7F7F;
+   transition: color 0.3s ease-in-out;
+}
+.copy_to_clipboard_wrapper.copied:after {
+   content: "\f00c";
+   color: green;
+}
+.copy_to_clipboard_wrapper.copyfail:after {
+   content: "\f071";
+   color: red;
+}
+
 /* ################--------------- Responsive  ---------------#################### */
 
 @media screen and (max-width: 700px) {
@@ -3900,7 +4012,6 @@ input[type=checkbox].toggle_comments:checked ~ ul {
    }
 
    #firstboxlogin {
-      position: fixed;
       overflow-y: auto;
    }
 
@@ -4333,6 +4444,8 @@ span.count {
    padding: .2em .5em;
    float: right;
    margin-top: -0.2em;
+   margin-left: .5em;
+   font-weight: bold;
 }
 
 span.count img {
@@ -4392,6 +4505,17 @@ button.unstyled {
 
 tr.linked-template td:not(.top) {
    background-color: #ffb4b4;
+}
+
+.notifs_setup {
+   display: table;
+   margin: 0 auto;
+   border-spacing: 1em 0;
+}
+
+.notifs_setup > form,
+.notifs_setup > table {
+   display: table-cell;
 }
 
 @media screen and (max-width: 900px) {

@@ -46,23 +46,23 @@ if (!defined('GLPI_ROOT')) {
 class Central extends CommonGLPI {
 
 
-   static function getTypeName($nb=0) {
+   static function getTypeName($nb = 0) {
 
       // No plural
       return __('Standard interface');
    }
 
 
-   function defineTabs($options=array()) {
+   function defineTabs($options = []) {
 
-      $ong = array();
+      $ong = [];
       $this->addStandardTab(__CLASS__, $ong, $options);
 
       return $ong;
    }
 
 
-   function getTabNameForItem(CommonGLPI $item, $withtemplate=0) {
+   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
 
       if ($item->getType() == __CLASS__) {
          $tabs[1] = __('Personal View');
@@ -76,7 +76,7 @@ class Central extends CommonGLPI {
    }
 
 
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum=1, $withtemplate=0) {
+   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
 
       if ($item->getType() == __CLASS__) {
          switch ($tabnum) {
@@ -150,9 +150,9 @@ class Central extends CommonGLPI {
       global $DB, $CFG_GLPI;
 
       $showticket  = Session::haveRightsOr("ticket",
-                                           array(Ticket::READMY, Ticket::READALL, Ticket::READASSIGN));
+                                           [Ticket::READMY, Ticket::READALL, Ticket::READASSIGN]);
 
-      $showproblem = Session::haveRightsOr('problem', array(Problem::READALL, Problem::READMY));
+      $showproblem = Session::haveRightsOr('problem', [Problem::READALL, Problem::READMY]);
 
       echo "<table class='tab_cadre_central'>";
 
@@ -163,7 +163,7 @@ class Central extends CommonGLPI {
          $logins = User::checkDefaultPasswords();
          $user   = new User();
          if (!empty($logins)) {
-            $accounts = array();
+            $accounts = [];
             foreach ($logins as $login) {
                $user->getFromDBbyName($login);
                $accounts[] = $user->getLink();
@@ -186,7 +186,7 @@ class Central extends CommonGLPI {
       if ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE) {
          $crashedtables = DBMysql::checkForCrashedTables();
          if (!empty($crashedtables)) {
-            $tables = array();
+            $tables = [];
             foreach ($crashedtables as $crashedtable) {
                $tables[] = $crashedtable['table'];
             }
@@ -230,9 +230,13 @@ class Central extends CommonGLPI {
 
          Ticket::showCentralList(0, "process", false);
          Ticket::showCentralList(0, "waiting", false);
+
+         TicketTask::showCentralList(0, "todo", false);
+
       }
       if ($showproblem) {
          Problem::showCentralList(0, "process", false);
+         ProblemTask::showCentralList(0, "todo", false);
       }
       echo "</td></tr>";
       echo "</table></td>";
@@ -275,21 +279,23 @@ class Central extends CommonGLPI {
    **/
    static function showGroupView() {
 
-      $showticket = Session::haveRightsOr("ticket", array(Ticket::READALL, Ticket::READASSIGN));
+      $showticket = Session::haveRightsOr("ticket", [Ticket::READALL, Ticket::READASSIGN]);
 
-      $showproblem = Session::haveRightsOr('problem', array(Problem::READALL, Problem::READMY));
+      $showproblem = Session::haveRightsOr('problem', [Problem::READALL, Problem::READMY]);
 
       echo "<table class='tab_cadre_central'>";
       echo "<tr class='noHover'><td class='top' width='50%'><table class='central'>";
       echo "<tr class='noHover'><td>";
       if ($showticket) {
          Ticket::showCentralList(0, "process", true);
+         TicketTask::showCentralList(0, "todo", true);
       }
       if (Session::haveRight('ticket', Ticket::READGROUP)) {
          Ticket::showCentralList(0, "waiting", true);
       }
       if ($showproblem) {
          Problem::showCentralList(0, "process", true);
+         ProblemTask::showCentralList(0, "todo", true);
       }
 
       echo "</td></tr>";

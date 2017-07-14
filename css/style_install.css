@@ -134,6 +134,10 @@ th {
 .red {
    color:red;
 }
+.migred {
+   color: white;
+   background-color: red;
+}
 .green {
    color:green;
 }
@@ -274,4 +278,8 @@ a.vsubmit:hover {
    border-radius: 50%;
    background-color: #FEC95C;
    opacity: 0;
+}
+
+.ui-widget {
+   font-size: 12px;
 }

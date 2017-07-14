@@ -37,10 +37,10 @@
 
 include ('../inc/includes.php');
 
-Session::checkSeveralRightsOr(array("networking" => UPDATE,
-                                    "internet"   => UPDATE));
+Session::checkSeveralRightsOr(["networking" => UPDATE,
+                                    "internet"   => UPDATE]);
 
-if (!TableExists('glpi_networkportmigrations')) {
+if (!$DB->tableExists('glpi_networkportmigrations')) {
    Session::addMessageAfterRedirect(__('You don\'t need the "migration cleaner" tool anymore...'));
    Html::redirect($CFG_GLPI["root_doc"]."/front/central.php");
 }

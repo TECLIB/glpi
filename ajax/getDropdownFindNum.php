@@ -43,7 +43,7 @@ Html::header_nocache();
 Session::checkLoginUser();
 
 // Security
-if (!TableExists($_POST['table'])) {
+if (!$DB->tableExists($_POST['table'])) {
    exit();
 }
 
@@ -86,13 +86,13 @@ if ((strlen($_POST['searchText']) > 0)) {
    $where .= " AND (`name` ".$search."
                     OR `id` = '".$_POST['searchText']."'";
 
-   if (FieldExists($_POST['table'], "contact")) {
+   if ($DB->fieldExists($_POST['table'], "contact")) {
       $where .= " OR `contact` ".$search;
    }
-   if (FieldExists($_POST['table'], "serial")) {
+   if ($DB->fieldExists($_POST['table'], "serial")) {
       $where .= " OR `serial` ".$search;
    }
-   if (FieldExists($_POST['table'], "otherserial")) {
+   if ($DB->fieldExists($_POST['table'], "otherserial")) {
       $where .= " OR `otherserial` ".$search;
    }
    $where .= ")";
@@ -119,12 +119,12 @@ $query = "SELECT *
           $LIMIT";
 $result = $DB->query($query);
 
-$datas = array();
+$datas = [];
 
 // Display first if no search
 if ($_POST['page'] == 1 && empty($_POST['searchText'])) {
-   array_push($datas, array('id'   => 0,
-                            'text' => Dropdown::EMPTY_VALUE));
+   array_push($datas, ['id'   => 0,
+                            'text' => Dropdown::EMPTY_VALUE]);
 }
 $count = 0;
 if ($DB->numrows($result)) {
@@ -146,8 +146,8 @@ if ($DB->numrows($result)) {
          $output = sprintf(__('%1$s (%2$s)'), $output, $data['id']);
       }
 
-      array_push($datas, array('id'   => $data['id'],
-                               'text' => $output));
+      array_push($datas, ['id'   => $data['id'],
+                               'text' => $output]);
       $count++;
    }
 }

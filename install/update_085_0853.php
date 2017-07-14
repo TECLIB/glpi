@@ -43,18 +43,18 @@ function update085to0853() {
    global $DB, $migration;
 
    $updateresult     = true;
-   $ADDTODISPLAYPREF = array();
+   $ADDTODISPLAYPREF = [];
 
    //TRANS: %s is the number of new version
    $migration->displayTitle(sprintf(__('Update to %s'), '0.85.3'));
    $migration->setVersion('0.85.3');
 
    $backup_tables = false;
-   $newtables     = array();
+   $newtables     = [];
 
    foreach ($newtables as $new_table) {
       // rename new tables if exists ?
-      if (TableExists($new_table)) {
+      if ($DB->tableExists($new_table)) {
          $migration->dropTable("backup_$new_table");
          $migration->displayWarning("$new_table table already exists. ".
                                     "A backup have been done to backup_$new_table.");
@@ -70,9 +70,9 @@ function update085to0853() {
    // Increase cron_limit
    $current_config = Config::getConfigurationValues('core');
    if ($current_config['cron_limit'] = 1) {
-      Config::setConfigurationValues('core', array('cron_limit' => 5));
+      Config::setConfigurationValues('core', ['cron_limit' => 5]);
    }
-   Config::setConfigurationValues('core', array('task_state' => Planning::TODO));
+   Config::setConfigurationValues('core', ['task_state' => Planning::TODO]);
    $migration->addField("glpi_users", "task_state", "int(11) DEFAULT NULL");
 
    $migration->addField('glpi_projecttasks', 'is_milestone', 'bool');
@@ -80,7 +80,7 @@ function update085to0853() {
 
    // Change Ticket items
    // Add glpi_items_tickets table for associated elements
-   if (!TableExists('glpi_items_tickets')) {
+   if (!$DB->tableExists('glpi_items_tickets')) {
       $query = "CREATE TABLE `glpi_items_tickets` (
                   `id` int(11) NOT NULL AUTO_INCREMENT,
                   `itemtype` varchar(255) DEFAULT NULL,
@@ -123,7 +123,7 @@ function update085to0853() {
    $DB->queryOrDie($query, "0.85.3 correct status for change");
 
    if ($migration->addField("glpi_entities", "is_notif_enable_default", "integer",
-                            array('value' => -2))) {
+                            ['value' => -2])) {
       $migration->migrationOneTable('glpi_entities');
       // Set directly to root entity
       $query = 'UPDATE `glpi_entities`

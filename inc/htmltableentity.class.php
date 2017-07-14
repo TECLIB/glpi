@@ -49,8 +49,8 @@ if (!defined('GLPI_ROOT')) {
 abstract class HTMLTableEntity {
 
    private $html_id    = '';
-   private $html_style = array();
-   private $html_class = array();
+   private $html_style = [];
+   private $html_class = [];
 
    private $content;
 
@@ -60,7 +60,7 @@ abstract class HTMLTableEntity {
     *
     * @param $content The content of a cell, header, ... Can simply be a string. But it can also
     *                 be a call to a specific function during the rendering of the table in case
-    *                 of direct display function (for instance: Dropdown::showInteger). A function
+    *                 of direct display function (for instance: Dropdown::showNumber). A function
     *                 call is an array containing two elements : 'function', the name the function
     *                 and 'parameters', an array of the parameters given to the function.
    **/
@@ -117,7 +117,7 @@ abstract class HTMLTableEntity {
    /**
     * @param $options   array
    **/
-   function displayEntityAttributs(array $options=array()) {
+   function displayEntityAttributs(array $options = []) {
 
       $id = $this->html_id;
       if (isset($options['id'])) {
@@ -178,7 +178,7 @@ abstract class HTMLTableEntity {
                if (isset($content['parameters'])) {
                   $parameters = $content['parameters'];
                } else {
-                  $parameters = array();
+                  $parameters = [];
                }
                call_user_func_array ($content['function'], $parameters);
             }
