@@ -331,11 +331,12 @@ $CFG_GLPI['itemdevicesensor_types']       = ['Computer', 'Peripheral'];
 
 
 $CFG_GLPI["notificationtemplates_types"]  = ['CartridgeItem', 'Change', 'ConsumableItem',
-                                                  'Contract', 'Crontask', 'DBConnection',
-                                                  'FieldUnicity', 'Infocom', 'MailCollector',
-                                                  'ObjectLock', 'PlanningRecall', 'Problem',
-                                                  'Project', 'ProjectTask', 'Reservation',
-                                                  'SoftwareLicense', 'Ticket', 'User', 'SavedSearch_Alert'];
+                                             'Contract', 'Crontask', 'DBConnection',
+                                             'FieldUnicity', 'Infocom', 'MailCollector',
+                                             'ObjectLock', 'PlanningRecall', 'Problem',
+                                             'Project', 'ProjectTask', 'Reservation',
+                                             'SoftwareLicense', 'Ticket', 'User',
+                                             'SavedSearch_Alert', 'Certificate'];
 
 $CFG_GLPI["union_search_type"]            = ['ReservationItem' => "reservation_types",
                                                   'AllAssets'       => "asset_types"];

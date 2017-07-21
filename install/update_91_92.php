@@ -775,6 +775,41 @@ function update91to92() {
          'mode'    => CronTask::MODE_INTERNAL
       ]
    );
+   if (!countElementsInTable('glpi_notifications',
+                             "`itemtype`='Certificate'")) {
+      $query = "INSERT INTO `glpi_notifications`
+                VALUES (null,'Certificates','0','Certificate','alert', '','1','1', NOW(), NOW());";
+      $DB->queryOrDie($query, "9.2 Add saved search alerts notification");
+      $notid = $DB->insert_id();
+
+      $query = "INSERT INTO `glpi_notificationtemplates` (`name`, `itemtype`, `date_mod`)
+                VALUES ('Certificates alerts', 'Certificate', NOW())";
+      $DB->queryOrDie($query, "9.2 Add certifcate alerts notification template");
+      $notid = $DB->insert_id();
+
+      $query = "INSERT INTO `glpi_notificationtemplatetranslations`
+                  (`notificationtemplates_id`, `language`, `subject`, `content_text`, `content_html`)
+                VALUES ($notid, '', '##certificate.action##  ##certificate.entity##',
+                        '##lang.certificate.entity## : ##certificate.entity##
+
+##FOREACHcertificates##
+
+##lang.certificate.serial## : ##certificate.serial##
+
+##lang.certificate.expirationdate## : ##certificate.expirationdate##
+
+##certificate.url##
+ ##ENDFOREACHcertificates##','&lt;p&gt;
+##lang.certificate.entity## : ##certificate.entity##&lt;br /&gt;
+##FOREACHcertificates##
+&lt;br /&gt;##lang.certificate.name## : ##certificate.name##&lt;br /&gt;
+##lang.certificate.serial## : ##certificate.serial##&lt;br /&gt;
+##lang.certificate.expirationdate## : ##certificate.expirationdate##
+&lt;br /&gt; &lt;a href=\"##certificate.url##\"&gt; ##certificate.url##
+&lt;/a&gt;&lt;br /&gt; ##ENDFOREACHcertificates##&lt;/p&gt;')";
+
+      $DB->queryOrDie($query, "9.2 add saved searches alerts notification translation");
+   }
 
    /************** Auto login **************/
    $migration->addConfig([
