@@ -345,6 +345,7 @@ class Html extends atoum {
          'Contact',
          'Contract',
          'Document',
+         'Certificate',
          'Line'
       ];
       $this->string($menu['management']['title'])->isIdenticalTo('Management');

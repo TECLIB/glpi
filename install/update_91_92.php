@@ -651,7 +651,6 @@ function update91to92() {
       }
    }
 
-
    $migration->addField('glpi_states', 'is_visible_certificate', 'bool');
    $migration->addKey('glpi_states', 'is_visible_certificate');
 
