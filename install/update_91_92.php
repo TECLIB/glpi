@@ -775,17 +775,18 @@ function update91to92() {
          'mode'    => CronTask::MODE_INTERNAL
       ]
    );
-   if (!countElementsInTable('glpi_notifications',
-                             "`itemtype`='Certificate'")) {
-      $query = "INSERT INTO `glpi_notifications`
-                VALUES (null,'Certificates','0','Certificate','alert', '','1','1', NOW(), NOW());";
-      $DB->queryOrDie($query, "9.2 Add saved search alerts notification");
-      $notid = $DB->insert_id();
-
+   if (!countElementsInTable('glpi_notifications', "`itemtype`='Certificate'")) {
       $query = "INSERT INTO `glpi_notificationtemplates` (`name`, `itemtype`, `date_mod`)
                 VALUES ('Certificates alerts', 'Certificate', NOW())";
       $DB->queryOrDie($query, "9.2 Add certifcate alerts notification template");
-      $notid = $DB->insert_id();
+      $nottid = $DB->insert_id();
+
+      $query = "INSERT INTO `glpi_notifications`
+                VALUES (null,'Certificates','0','Certificate','alert',
+                        '".Notification_NotificationTemplate::MODE_MAIL."', $nottid, '','1','1',
+                        NOW(), NOW());";
+      $DB->queryOrDie($query, "9.2 Add saved search alerts notification");
+      $DB->insert_id();
 
       $query = "INSERT INTO `glpi_notificationtemplatetranslations`
                   (`notificationtemplates_id`, `language`, `subject`, `content_text`, `content_html`)
