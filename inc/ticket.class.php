@@ -1578,7 +1578,10 @@ class Ticket extends CommonITILObject {
          }
       }
 
+      // fill auto-assign when no tech defined (only for tech)
       if (isset($_SESSION['glpiset_default_tech']) && $_SESSION['glpiset_default_tech']
+          && isset($_SESSION['glpiactiveprofile']['interface'])
+          && $_SESSION['glpiactiveprofile']['interface'] == 'central'
           && (!isset($input['_users_id_assign']) || $input['_users_id_assign'] == 0)) {
          $input['_users_id_assign'] = Session::getLoginUserID();
       }
@@ -3269,6 +3272,20 @@ class Ticket extends CommonITILObject {
                               '_filename'           => [],
                               '_tag_filename'       => []];
 
+      // Get default values from posted values on reload form
+      if (!$ticket_template) {
+         if (isset($_POST)) {
+            $options = $_POST;
+         }
+      }
+
+      // Get default values from posted values on reload form
+      if (!$ticket_template) {
+         if (isset($_POST)) {
+            $options = $_POST;
+         }
+      }
+
       // Restore saved value or override with page parameter
       $saved = $this->restoreInput();
       foreach ($default_values as $name => $value) {
@@ -3605,8 +3622,7 @@ class Ticket extends CommonITILObject {
       if (!$tt->isHiddenField('content')
           || $tt->isPredefinedField('content')) {
          echo "<tr class='tab_bg_1'>";
-         echo "<td>".sprintf(__('%1$s%2$s'), __('Description'), $tt->getMandatoryMark('content')).
-              "</td><td>";
+         echo "<td>".sprintf(__('%1$s%2$s'), __('Description'), $tt->getMandatoryMark('content'));
 
          $rand       = mt_rand();
          $rand_text  = mt_rand();
@@ -3614,8 +3630,6 @@ class Ticket extends CommonITILObject {
          $cols       = 90;
          $rows       = 6;
          $content_id = "content$rand";
-         echo "<tr class='tab_bg_1'>";
-         echo "<td class='middle right'>".__('Description')."</td>";
          echo "<td class='center middle'>";
 
          $content = $options['content'];
@@ -3624,7 +3638,7 @@ class Ticket extends CommonITILObject {
          }
 
          if ($CFG_GLPI["use_rich_text"]) {
-            $content = $this->setRichTextContent($content_id, $content, $rand);
+            $content = Html::setRichTextContent($content_id, $content, $rand);
             $cols    = 100;
             $rows    = 10;
          } else {
@@ -6697,13 +6711,13 @@ class Ticket extends CommonITILObject {
          echo "<div class='b_right'>".__("Ticket recall")."</div>";
 
          echo "<div class='ticket_title'>";
-         echo html_entity_decode($this->fields['name']);
+         echo Html::setSimpleTextContent($this->fields['name']);
          echo "</div>";
 
          echo "<div class='ticket_description'>";
 
          if ($CFG_GLPI["use_rich_text"]) {
-            echo html_entity_decode($this->fields['content']);
+            echo Html::setRichTextContent('', $this->fields['content'], '', true);
          } else {
             echo Html::setSimpleTextContent($this->fields['content']);
          }

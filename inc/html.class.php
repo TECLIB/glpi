@@ -1280,7 +1280,7 @@ class Html {
       $menu['assets']['title']       = __('Assets');
       $menu['assets']['types']       = ['Computer', 'Monitor', 'Software',
                                              'NetworkEquipment', 'Peripheral', 'Printer',
-                                             'CartridgeItem', 'ConsumableItem', 'Phone' ];
+                                             'CartridgeItem', 'ConsumableItem', 'Phone'];
 
       $menu['helpdesk']['title']     = __('Assistance');
       $menu['helpdesk']['types']     = ['Ticket', 'Problem', 'Change',
@@ -1288,7 +1288,7 @@ class Html {
 
       $menu['management']['title']   = __('Management');
       $menu['management']['types']   = ['SoftwareLicense','Budget', 'Supplier', 'Contact', 'Contract',
-                                                'Document', 'Line'];
+                                        'Document', 'Line', 'Certificate'];
 
       $menu['tools']['title']        = __('Tools');
       $menu['tools']['types']        = ['Project', 'Reminder', 'RSSFeed', 'KnowbaseItem',
@@ -3862,6 +3862,9 @@ class Html {
    **/
    static function initEditorSystem($name, $rand = '', $display = true, $readonly = false) {
       global $CFG_GLPI;
+
+      // load tinymce lib
+      Html::requireJs('tinymce');
 
       $language = $_SESSION['glpilanguage'];
       if (!file_exists(GLPI_ROOT."/lib/tiny_mce/langs/$language.js")) {
