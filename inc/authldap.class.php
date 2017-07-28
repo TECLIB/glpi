@@ -78,7 +78,7 @@ class AuthLDAP extends CommonDBTM {
       $this->fields['port']                        = '389';
       $this->fields['condition']                   = '';
       $this->fields['login_field']                 = 'uid';
-      $this->fields['sync_field']                  = 'uid';
+      $this->fields['sync_field']                  = NULL;
       $this->fields['use_tls']                     = 0;
       $this->fields['group_field']                 = '';
       $this->fields['group_condition']             = '';
@@ -252,7 +252,7 @@ class AuthLDAP extends CommonDBTM {
             }
             foreach ($ids as $id) {
                if (AuthLdap::ldapImportUserByServerId(['method' => AuthLDAP::IDENTIFIER_LOGIN,
-                                                            'value'  => $id],
+                                                       'value'  => $id],
                                                       $_SESSION['ldap_import']['mode'],
                                                       $_SESSION['ldap_import']['authldaps_id'],
                                                       true)) {
@@ -1131,23 +1131,26 @@ class AuthLDAP extends CommonDBTM {
    static function getSyncFields(array $authtype_array) {
 
       $ret    = [];
-      $fields = ['login_field'               => 'name',
-                      'email1_field'              => 'email1',
-                      'email2_field'              => 'email2',
-                      'email3_field'              => 'email3',
-                      'email4_field'              => 'email4',
-                      'realname_field'            => 'realname',
-                      'firstname_field'           => 'firstname',
-                      'phone_field'               => 'phone',
-                      'phone2_field'              => 'phone2',
-                      'mobile_field'              => 'mobile',
-                      'location_field'            => 'locations_id',
-                      'comment_field'             => 'comment',
-                      'title_field'               => 'usertitles_id',
-                      'category_field'            => 'usercategories_id',
-                      'language_field'            => 'language',
-                      'registration_number_field' => 'registration_number',
-                      'picture_field'             => 'picture'];
+      $fields = [
+                  'login_field'               => 'name',
+                  'email1_field'              => 'email1',
+                  'email2_field'              => 'email2',
+                  'email3_field'              => 'email3',
+                  'email4_field'              => 'email4',
+                  'realname_field'            => 'realname',
+                  'firstname_field'           => 'firstname',
+                  'phone_field'               => 'phone',
+                  'phone2_field'              => 'phone2',
+                  'mobile_field'              => 'mobile',
+                  'location_field'            => 'locations_id',
+                  'comment_field'             => 'comment',
+                  'title_field'               => 'usertitles_id',
+                  'category_field'            => 'usercategories_id',
+                  'language_field'            => 'language',
+                  'registration_number_field' => 'registration_number',
+                  'picture_field'             => 'picture',
+                  'sync_field'                => 'sync_field'
+                 ];
 
       foreach ($fields as $key => $val) {
          if (isset($authtype_array[$key]) && !empty($authtype_array[$key])) {
@@ -1269,6 +1272,34 @@ class AuthLDAP extends CommonDBTM {
       return date("YmdHis", strtotime($date)).'.0Z';
    }
 
+
+   /**
+    * Return the LDAP field to use for user synchronization
+    * It may be sync_field if defined, or login_field
+    * @since 9.2
+    *
+    * @return string the ldap field to use for user synchronization
+    */
+   public function getLdapIdentifierToUse() {
+      if (!empty($this->fields['sync_field'])) {
+         return $this->fields['sync_field'];
+      } else {
+         return $this->fields['login_field'];
+      }
+   }
+
+   /**
+   * Check if the sync_field is configured for an LDAP server
+   *
+   * @since 9.2
+   * @param integer authldaps_id the LDAP server ID
+   * @return boolean true if configured, false if not configured
+   */
+   public static function isSyncFieldConfigured($authldaps_id) {
+      $authldap = new self();
+      $authldap->getFromDB($authldaps_id);
+      return ($authldap->fields['sync_field'] != null);
+   }
 
    /**
     * Test a LDAP connection
@@ -1521,29 +1552,30 @@ class AuthLDAP extends CommonDBTM {
             for ($ligne = 0; $ligne < $info["count"]; $ligne++) {
                //If ldap add
                if ($values['mode'] == self::ACTION_IMPORT) {
-                  if (in_array($config_ldap->fields['login_field'], $info[$ligne])) {
-                     $ldap_users[$info[$ligne][$config_ldap->fields['login_field']][0]]
-                        = $info[$ligne][$config_ldap->fields['login_field']][0];
-                     $user_infos[$info[$ligne][$config_ldap->fields['login_field']][0]]["timestamp"]
+                  $login_field = $config_ldap->getLdapIdentifierToUse();
+                  if (in_array($login_field, $info[$ligne])) {
+                     $ldap_users[$info[$ligne][$login_field][0]]
+                        = $info[$ligne][$login_field][0];
+                     $user_infos[$info[$ligne][$login_field][0]]["timestamp"]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$config_ldap->fields['login_field']][0]]["user_dn"]
+                     $user_infos[$info[$ligne][$login_field][0]]["user_dn"]
                         = $info[$ligne]['dn'];
                   }
 
                } else {
                   //If ldap synchronisation
-                  if (in_array($config_ldap->fields['login_field'], $info[$ligne])) {
-                     $ldap_users[$info[$ligne][$config_ldap->fields['login_field']][0]]
+                  if (in_array($login_field, $info[$ligne])) {
+                     $ldap_users[$info[$ligne][$login_field][0]]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$config_ldap->fields['login_field']][0]]["timestamp"]
+                     $user_infos[$info[$ligne][$login_field][0]]["timestamp"]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$config_ldap->fields['login_field']][0]]["user_dn"]
+                     $user_infos[$info[$ligne][$login_field][0]]["user_dn"]
                         = $info[$ligne]['dn'];
-                     $user_infos[$info[$ligne][$config_ldap->fields['login_field']][0]]["name"]
-                        = $info[$ligne][$config_ldap->fields['login_field']][0];
+                     $user_infos[$info[$ligne][$login_field][0]]["name"]
+                        = $info[$ligne][$login_field][0];
                   }
                }
             }
@@ -1609,13 +1641,14 @@ class AuthLDAP extends CommonDBTM {
       }
       $ds = $config_ldap->connect();
       if ($ds) {
+         $login_field = $config_ldap->getLdapIdentifierToUse();
          //Search for ldap login AND modifyTimestamp,
          //which indicates the last update of the object in directory
-         $attrs = [$config_ldap->fields['login_field'], "modifyTimestamp"];
+         $attrs = [$login_field, "modifyTimestamp"];
 
          // Try a search to find the DN
          if ($values['ldap_filter'] == '') {
-            $filter = "(".$config_ldap->fields['login_field']."=*)";
+            $filter = "(".$login_field."=*)";
          } else {
             $filter = $values['ldap_filter'];
          }
@@ -1667,18 +1700,20 @@ class AuthLDAP extends CommonDBTM {
                      continue;
                   }
                   $glpi_users[] = ['id'        => $user['id'],
-                                        'user'      => $userfound['name'],
-                                        'timestamp' => $user_infos[$userfound['name']]['timestamp'],
-                                        'date_sync' => $tmpuser->fields['date_sync'],
-                                        'dn'        => $user['user_dn']];
+                                   'user'      => $userfound['name'],
+                                   'timestamp' => $user_infos[$userfound['name']]['timestamp'],
+                                   'date_sync' => $tmpuser->fields['date_sync'],
+                                   'dn'        => $user['user_dn']
+                                  ];
                } else if (($values['action'] == self::ACTION_ALL)
                           || (($ldap_users[$user['name']] - strtotime($user['date_sync'])) > 0)) {
                   //If entry was modified or if script should synchronize all the users
                   $glpi_users[] = ['id'        => $user['id'],
-                                        'user'      => $user['name'],
-                                        'timestamp' => $user_infos[$user['name']]['timestamp'],
-                                        'date_sync' => $user['date_sync'],
-                                        'dn'        => $user['user_dn']];
+                                   'user'      => $user['name'],
+                                   'timestamp' => $user_infos[$user['name']]['timestamp'],
+                                   'date_sync' => $user['date_sync'],
+                                   'dn'        => $user['user_dn']
+                                  ];
                }
 
             } else if (($values['action'] == self::ACTION_ALL)
@@ -1705,8 +1740,8 @@ class AuthLDAP extends CommonDBTM {
             //If user dn exists in DB, it means that user login field has changed
             if (!$tmpuser->getFromDBByDn(toolbox::addslashes_deep($user_infos[$user]["user_dn"]))) {
                $list[] = ["user"      => $user,
-                               "timestamp" => $user_infos[$user]["timestamp"],
-                               "date_sync" => Dropdown::EMPTY_VALUE];
+                          "timestamp" => $user_infos[$user]["timestamp"],
+                          "date_sync" => Dropdown::EMPTY_VALUE];
             }
          }
          if ($values['order'] == 'DESC') {
@@ -2039,8 +2074,9 @@ class AuthLDAP extends CommonDBTM {
                if ($search_in_groups) {
                   // No cn : not a real object
                   if (isset($infos[$ligne]["cn"][0])) {
-                     $groups[$infos[$ligne]["dn"]] = (["cn" => $infos[$ligne]["cn"][0],
-                         "search_type" => "groups"]);
+                     $groups[$infos[$ligne]["dn"]]
+                       = (["cn"          => $infos[$ligne]["cn"][0],
+                           "search_type" => "groups"]);
                   }
 
                } else {
@@ -2063,9 +2099,10 @@ class AuthLDAP extends CommonDBTM {
                                                             Toolbox::addslashes_deep($ou))."')";
 
                            foreach ($DB->request($query) as $group) {
-                              $groups[$group['ldap_value']] = ["cn"   => $group['ldap_value'],
-                                                                    "search_type"
-                                                                           => "users"];
+                              $groups[$group['ldap_value']]
+                                 = ["cn"          => $group['ldap_value'],
+                                    "search_type" => "users"
+                                 ];
                            }
                         }
 
@@ -2145,6 +2182,23 @@ class AuthLDAP extends CommonDBTM {
       echo "</div>";
    }
 
+   /**
+    * Force synchronization for one user
+    *
+    * @param USer $user User to synchronize
+    */
+   static function forceOneUserSynchronization(User $user) {
+      $authldap = new AuthLdap();
+
+      //Get the LDAP server from which the user has been imported
+      if ($authldap->getFromDB($user->fields['auths_id'])) {
+         $sync_field = $authldap->getLdapIdentifierToUse();
+         AuthLdap::ldapImportUserByServerId(['method' => self::IDENTIFIER_LOGIN,
+                                             'value'  => $user->fields[$sync_field]
+                                            ],
+                                            true, $user->fields["auths_id"], true);
+      }
+   }
 
    /**
     * Import a user from a specific ldap server
@@ -2180,7 +2234,7 @@ class AuthLDAP extends CommonDBTM {
       if ($ds) {
          $conn_cache[$ldap_server]                            = $ds;
          $search_parameters['method']                         = $params['method'];
-         $search_parameters['fields'][self::IDENTIFIER_LOGIN] = $config_ldap->fields['login_field'];
+         $search_parameters['fields'][self::IDENTIFIER_LOGIN] = $config_ldap->getLdapIdentifierToUse();
 
          if ($params['method'] == self::IDENTIFIER_EMAIL) {
             $search_parameters['fields'][self::IDENTIFIER_EMAIL]
@@ -2188,19 +2242,19 @@ class AuthLDAP extends CommonDBTM {
          }
 
          //Get the user's dn & login
-         $attribs = ['basedn'      => $config_ldap->fields['basedn'],
-                          'login_field' => $search_parameters['fields'][$search_parameters['method']],
-                          'search_parameters'
-                                        => $search_parameters,
-                          'user_params' => $params,
-                          'condition'   => $config_ldap->fields['condition']];
+         $attribs = ['basedn'            => $config_ldap->fields['basedn'],
+                     'login_field'       => $search_parameters['fields'][$search_parameters['method']],
+                     'search_parameters' => $search_parameters,
+                     'user_params'       => $params,
+                     'condition'         => $config_ldap->fields['condition']
+                    ];
 
          $infos = self::searchUserDn($ds, $attribs);
 
          if ($infos && $infos['dn']) {
             $user_dn = $infos['dn'];
-            $login   = $infos[$config_ldap->fields['login_field']];
-            $user = new User();
+            $login   = $infos[$config_ldap->getLdapIdentifierToUse()];
+            $user    = new User();
 
             //Get information from LDAP
             if ($user->getFromLDAP($ds, $config_ldap->fields, $user_dn, addslashes($login),
@@ -2227,7 +2281,8 @@ class AuthLDAP extends CommonDBTM {
 
                   $user->fields["id"] = $user->add($input);
                   return ['action' => self::USER_IMPORTED,
-                               'id'     => $user->fields["id"]];
+                          'id'     => $user->fields["id"]
+                         ];
                }
                //Get the ID by user name
                if (!($id = User::getIdByfield('name', $login))) {
@@ -2241,7 +2296,8 @@ class AuthLDAP extends CommonDBTM {
                }
                $user->update($input);
                return ['action' => self::USER_SYNCHRONIZED,
-                            'id'     => $input['id']];
+                       'id'     => $input['id']
+                      ];
             }
             return false;
 
@@ -2250,7 +2306,8 @@ class AuthLDAP extends CommonDBTM {
             $users_id = User::getIdByField('name', $params['value']);
             User::manageDeletedUserInLdap($users_id);
             return ['action' => self::USER_DELETED_LDAP,
-                          'id'    => $users_id];
+                    'id'     => $users_id
+                   ];
          }
 
       } else {
@@ -2508,7 +2565,6 @@ class AuthLDAP extends CommonDBTM {
       return $auth;
    }
 
-
    /**
     * Try to authentify a user by checking all the directories
     *
@@ -2522,14 +2578,16 @@ class AuthLDAP extends CommonDBTM {
     *
     * @return object identification object
     */
-   static function tryLdapAuth($auth, $login, $password, $auths_id = 0, $user_dn = false, $break = true) {
+   static function tryLdapAuth($auth, $login, $password, $auths_id = 0,
+                               $user_dn = false, $break = true) {
 
       //If no specific source is given, test all ldap directories
       if ($auths_id <= 0) {
          foreach ($auth->authtypes["ldap"] as $ldap_method) {
             if (!$auth->auth_succeded
                 && $ldap_method['is_active']) {
-               $auth = self::ldapAuth($auth, $login, $password, $ldap_method, $user_dn);
+               $auth = self::ldapAuth($auth, $login, $password, $ldap_method,
+                                      $user_dn);
             } else {
                if ($break) {
                   break;
@@ -2540,7 +2598,8 @@ class AuthLDAP extends CommonDBTM {
       } else if (array_key_exists($auths_id, $auth->authtypes["ldap"])) {
          // Check if the ldap server indicated as the last good one still exists !
          //A specific ldap directory is given, test it and only this one !
-         $auth = self::ldapAuth($auth, $login, $password, $auth->authtypes["ldap"][$auths_id],
+         $auth = self::ldapAuth($auth, $login, $password,
+                                $auth->authtypes["ldap"][$auths_id],
                                 $user_dn);
       }
       return $auth;
@@ -2601,12 +2660,14 @@ class AuthLDAP extends CommonDBTM {
       }
 
       $filter = Toolbox::unclean_cross_side_scripting_deep($filter);
+      Toolbox::logDebug($filter);
       if ($result = @ldap_search($ds, $values['basedn'], $filter, $ldap_parameters)) {
          $info = self::get_entries_clean($ds, $result);
 
          if (is_array($info) && ($info['count'] == 1)) {
             return ['dn'        => $info[0]['dn'],
-                         $login_attr => $info[0][$login_attr][0]];
+                    $login_attr => $info[0][$login_attr][0]
+                   ];
          }
       }
       return false;
@@ -2677,8 +2738,9 @@ class AuthLDAP extends CommonDBTM {
     */
    static function manageValuesInSession($options = [], $delete = false) {
 
-      $fields = ['action', 'authldaps_id', 'basedn', 'begin_date', 'criterias',  'end_date',
-                      'entities_id', 'interface', 'ldap_filter', 'mode'];
+      $fields = ['action', 'authldaps_id', 'basedn', 'begin_date', 'criterias',
+                 'end_date', 'entities_id', 'interface', 'ldap_filter', 'mode'
+                ];
 
       //If form accessed via modal, do not show expert mode link
       // Manage new value is set : entity or mode
@@ -2716,7 +2778,8 @@ class AuthLDAP extends CommonDBTM {
 
          if ((!Config::canUpdate()
               && !Entity::canUpdate())
-             || (!isset($_SESSION['ldap_import']['interface']) && !isset($options['interface']))) {
+             || (!isset($_SESSION['ldap_import']['interface'])
+                && !isset($options['interface']))) {
             $options['interface'] = self::SIMPLE_INTERFACE;
          }
 

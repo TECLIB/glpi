@@ -1388,6 +1388,33 @@ class User extends CommonDBTM {
    }
 
 
+   function syncAuthField($ldap_connection, $ldap_method, $userdn, $login) {
+      global $DB, $CFG_GLPI;
+
+      // we prevent some delay...
+      if (empty($ldap_method["host"])) {
+         return false;
+      }
+
+      if ($ldap_connection) {
+         //Set all the search fields
+         $this->fields['password'] = "";
+
+         $f  = [$ldap_method['sync_field']];
+         $sr = @ ldap_read($ldap_connection, $userdn, "objectClass=*", $f);
+         $v  = AuthLDAP::get_entries_clean($ldap_connection, $sr);
+
+         if (!is_array($v)
+             || ( count($v) == 0)
+             || empty($v[0][$ldap_method['sync_field']][0])) {
+            return false;
+         }
+Toolbox::logDebug($v);
+         $tmp['id']         = $this->fields['id'];
+         $tmp['sync_field'] = $v[0][$ldap_method['sync_field']][0];
+      }
+   }
+
    /**
     * Function that try to load from LDAP the user information...
     *
@@ -1910,8 +1937,8 @@ class User extends CommonDBTM {
       }
 
       if (!empty($this->fields["name"])) {
-         echo "<td rowspan='3'>" . __('Picture') . "</td>";
-         echo "<td rowspan='3'>";
+         echo "<td rowspan='4'>" . __('Picture') . "</td>";
+         echo "<td rowspan='4'>";
          echo "<div class='user_picture_border_small' id='picture$rand'>";
          echo "<img class='user_picture_small' alt=\"".__s('Picture')."\" src='".
                 User::getThumbnailURLForPicture($this->fields['picture'])."'>";
@@ -1927,10 +1954,30 @@ class User extends CommonDBTM {
          echo "<input type='checkbox' name='_blank_picture'>&nbsp;".__('Clear');
          echo "</td>";
       } else {
-         echo "<td rowspan='3'></td>";
-         echo "<td rowspan='3'></td>";
+         echo "<td rowspan='4'></td>";
+         echo "<td rowspan='4'></td>";
       }
       echo "</tr>";
+
+      //If it's an external auth, check if the sync_field must be displayed
+      if ($extauth
+         && $this->fields['auths_id']
+            && AuthLDAP::isSyncFieldConfigured($this->fields['auths_id'])) {
+         echo "<tr class='tab_bg_1'><td>" . __('Synchronization field') . "</td><td>";
+         if (self::canUpdate()
+             && (!$extauth || empty($ID))) {
+                Html::autocompletionTextField($this, "sync_field");
+         } else {
+            if (empty($this->fields['sync_field'])) {
+               echo Dropdown::EMPTY_VALUE;
+            } else {
+               echo $this->fields['sync_field'];
+            }
+         }
+         echo "</td></tr>";
+      } else {
+         echo "<tr><td colspan='2'></td></tr>";
+      }
 
       echo "<tr class='tab_bg_1'><td>" . __('Surname') . "</td><td>";
       Html::autocompletionTextField($this, "realname");
