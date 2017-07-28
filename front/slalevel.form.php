@@ -56,7 +56,7 @@ if (isset($_POST["update"])) {
    $item->check(-1, CREATE, $_POST);
 
    if ($newID = $item->add($_POST)) {
-      Event::log($_POST["slts_id"], "slts", 4, "setup",
+      Event::log($_POST["slas_id"], "slas", 4, "setup",
                  //TRANS: %s is the user login
                  sprintf(__('%s adds a link with an item'), $_SESSION["glpiname"]));
       if ($_SESSION['glpibackcreated']) {
@@ -96,7 +96,7 @@ if (isset($_POST["update"])) {
    Html::back();
 
 } else if (isset($_GET["id"]) && ($_GET["id"] > 0)) { //print computer information
-   Html::header(SlaLevel::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "sla", "slalevel");
+   Html::header(SlaLevel::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "slm", "slalevel");
    //show computer form to add
    $item->display(['id' => $_GET["id"]]);
    Html::footer();
