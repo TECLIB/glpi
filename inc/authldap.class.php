@@ -1288,6 +1288,17 @@ class AuthLDAP extends CommonDBTM {
       }
    }
 
+
+   /**
+    * Indicates if there's a sync_field enabled in the LDAP configuration
+    * @since 9.2
+    *
+    * @return boolean true if the sync_field is enabled (the field is filled)
+    */
+   public function isSyncFieldEnabled() {
+      return (!empty($this->fields['sync_field']));
+   }
+
    /**
    * Check if the sync_field is configured for an LDAP server
    *
@@ -1384,6 +1395,9 @@ class AuthLDAP extends CommonDBTM {
       $limitexceeded = false;
       $ldap_users    = self::getAllUsers($values, $results, $limitexceeded);
 
+      $config_ldap   = new AuthLDAP();
+      $config_ldap->getFromDB($values['authldaps_id']);
+
       if (is_array($ldap_users)) {
          $numrows = count($ldap_users);
 
@@ -1422,6 +1436,11 @@ class AuthLDAP extends CommonDBTM {
             Html::checkAllAsCheckbox('mass'.__CLASS__.$rand);
             echo "</th>";
             $num = 0;
+            if ($config_ldap->isSyncFieldEnabled()) {
+               echo Search::showHeaderItem(Search::HTML_OUTPUT, __('Synchonization field'), $num,
+                                           $_SERVER['PHP_SELF'].
+                                               "?order=".($values['order']=="DESC"?"ASC":"DESC"));
+            }
             echo Search::showHeaderItem(Search::HTML_OUTPUT, _n('User', 'Users', Session::getPluralNumber()), $num,
                                         $_SERVER['PHP_SELF'].
                                             "?order=".($values['order']=="DESC"?"ASC":"DESC"));
@@ -1453,8 +1472,10 @@ class AuthLDAP extends CommonDBTM {
                //Need to use " instead of ' because it doesn't work with names with ' inside !
                echo "<td>";
                echo Html::getMassiveActionCheckBox(__CLASS__, $user);
-               //echo "<input type='checkbox' name=\"item[" . $user . "]\" value='1'>";
                echo "</td>";
+               if ($config_ldap->isSyncFieldEnabled()) {
+                  echo "<td>" . $userinfos[$config_ldap->getLdapIdentifierToUse()] . "</td>";
+               }
                echo "<td>" . $link . "</td>";
 
                if ($stamp != '') {
@@ -1476,6 +1497,12 @@ class AuthLDAP extends CommonDBTM {
             Html::checkAllAsCheckbox('mass'.__CLASS__.$rand);
             echo "</th>";
             $num = 0;
+
+            if ($config_ldap->isSyncFieldEnabled()) {
+               echo Search::showHeaderItem(Search::HTML_OUTPUT, __('Synchonization field'), $num,
+                                           $_SERVER['PHP_SELF'].
+                                               "?order=".($values['order']=="DESC"?"ASC":"DESC"));
+            }
             echo Search::showHeaderItem(Search::HTML_OUTPUT, _n('User', 'Users', Session::getPluralNumber()), $num,
                                         $_SERVER['PHP_SELF'].
                                                 "?order=".($values['order']=="DESC"?"ASC":"DESC"));
@@ -1552,30 +1579,44 @@ class AuthLDAP extends CommonDBTM {
             for ($ligne = 0; $ligne < $info["count"]; $ligne++) {
                //If ldap add
                if ($values['mode'] == self::ACTION_IMPORT) {
-                  $login_field = $config_ldap->getLdapIdentifierToUse();
-                  if (in_array($login_field, $info[$ligne])) {
-                     $ldap_users[$info[$ligne][$login_field][0]]
-                        = $info[$ligne][$login_field][0];
-                     $user_infos[$info[$ligne][$login_field][0]]["timestamp"]
+                  $field_for_sync = $config_ldap->getLdapIdentifierToUse();
+                  if (in_array($field_for_sync, $info[$ligne])) {
+                     $ldap_users[$info[$ligne][$field_for_sync][0]]
+                        = $info[$ligne][$field_for_sync][0];
+                     $user_infos[$info[$ligne][$field_for_sync][0]]["timestamp"]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$login_field][0]]["user_dn"]
+                     $user_infos[$info[$ligne][$field_for_sync][0]]["user_dn"]
                         = $info[$ligne]['dn'];
+                     $user_infos[$info[$ligne][$field_for_sync][0]][$field_for_sync]
+                        = $info[$ligne][$field_for_sync][0];
+                     if ($config_ldap->isSyncFieldEnabled()) {
+                        $login_field = $config_ldap->fields['login_field'];
+                        $user_infos[$info[$ligne][$field_for_sync][0]][$login_field]
+                           = $info[$ligne][$login_field][0];
+                     }
                   }
 
                } else {
                   //If ldap synchronisation
-                  if (in_array($login_field, $info[$ligne])) {
-                     $ldap_users[$info[$ligne][$login_field][0]]
+                  if (in_array($field_for_sync, $info[$ligne])) {
+                     $ldap_users[$info[$ligne][$field_for_sync][0]]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$login_field][0]]["timestamp"]
+                     $user_infos[$info[$ligne][$field_for_sync][0]]["timestamp"]
                         = self::ldapStamp2UnixStamp($info[$ligne]['modifytimestamp'][0],
                                                     $config_ldap->fields['time_offset']);
-                     $user_infos[$info[$ligne][$login_field][0]]["user_dn"]
+                     $user_infos[$info[$ligne][$field_for_sync][0]]["user_dn"]
                         = $info[$ligne]['dn'];
-                     $user_infos[$info[$ligne][$login_field][0]]["name"]
-                        = $info[$ligne][$login_field][0];
+                     $user_infos[$info[$ligne][$field_for_sync][0]]["name"]
+                        = $info[$ligne][$field_for_sync][0];
+                     $user_infos[$info[$ligne][$field_for_sync][0]][$field_for_sync]
+                        = $info[$ligne][$field_for_sync][0];
+                     if ($config_ldap->isSyncFieldEnabled()) {
+                        $login_field = $config_ldap->fields['login_field'];
+                        $user_infos[$info[$ligne][$field_for_sync][0]][$login_field]
+                           = $info[$ligne][$login_field];
+                     }
                   }
                }
             }
@@ -1641,14 +1682,17 @@ class AuthLDAP extends CommonDBTM {
       }
       $ds = $config_ldap->connect();
       if ($ds) {
-         $login_field = $config_ldap->getLdapIdentifierToUse();
+         $field_for_sync = $config_ldap->getLdapIdentifierToUse();
          //Search for ldap login AND modifyTimestamp,
          //which indicates the last update of the object in directory
-         $attrs = [$login_field, "modifyTimestamp"];
+         $attrs = [$config_ldap->fields['login_field'], "modifyTimestamp"];
+         if ($field_for_sync != $config_ldap->fields['login_field']) {
+            $attrs[] = $field_for_sync;
+         }
 
          // Try a search to find the DN
          if ($values['ldap_filter'] == '') {
-            $filter = "(".$login_field."=*)";
+            $filter = "(".$field_for_sync."=*)";
          } else {
             $filter = $values['ldap_filter'];
          }
@@ -1658,6 +1702,7 @@ class AuthLDAP extends CommonDBTM {
                                                                $values['end_date']);
             $filter           = "(&$filter $filter_timestamp)";
          }
+
          $result = self::searchForUsers($ds, $values, $filter, $attrs, $limitexceeded,
                                         $user_infos, $ldap_users, $config_ldap);
          if (!$result) {
@@ -1699,20 +1744,22 @@ class AuthLDAP extends CommonDBTM {
                      //Just skip user synchronization to avoid errors
                      continue;
                   }
-                  $glpi_users[] = ['id'        => $user['id'],
-                                   'user'      => $userfound['name'],
-                                   'timestamp' => $user_infos[$userfound['name']]['timestamp'],
-                                   'date_sync' => $tmpuser->fields['date_sync'],
-                                   'dn'        => $user['user_dn']
+                  $glpi_users[] = ['id'         => $user['id'],
+                                   'user'       => $userfound['name'],
+                                   'sync_field' => $userfound['sync_field'],
+                                   'timestamp'  => $user_infos[$userfound['name']]['timestamp'],
+                                   'date_sync'  => $tmpuser->fields['date_sync'],
+                                   'dn'         => $user['user_dn']
                                   ];
                } else if (($values['action'] == self::ACTION_ALL)
                           || (($ldap_users[$user['name']] - strtotime($user['date_sync'])) > 0)) {
                   //If entry was modified or if script should synchronize all the users
-                  $glpi_users[] = ['id'        => $user['id'],
-                                   'user'      => $user['name'],
-                                   'timestamp' => $user_infos[$user['name']]['timestamp'],
-                                   'date_sync' => $user['date_sync'],
-                                   'dn'        => $user['user_dn']
+                  $glpi_users[] = ['id'         => $user['id'],
+                                   'user'       => $user['name'],
+                                   'sync_field' => $user['sync_field'],
+                                   'timestamp'  => $user_infos[$user['name']]['timestamp'],
+                                   'date_sync'  => $user['date_sync'],
+                                   'dn'         => $user['user_dn']
                                   ];
                }
 
@@ -2660,7 +2707,6 @@ class AuthLDAP extends CommonDBTM {
       }
 
       $filter = Toolbox::unclean_cross_side_scripting_deep($filter);
-      Toolbox::logDebug($filter);
       if ($result = @ldap_search($ds, $values['basedn'], $filter, $ldap_parameters)) {
          $info = self::get_entries_clean($ds, $result);
 
