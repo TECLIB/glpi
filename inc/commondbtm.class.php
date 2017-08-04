@@ -2345,6 +2345,13 @@ class CommonDBTM extends CommonGLPI {
             && Session::isMultiEntitiesMode()
             && $this->isEntityAssign()) {
             $entityname = Dropdown::getDropdownName("glpi_entities", $this->fields["entities_id"]);
+            $full_name  = $entityname;
+            if (Toolbox::strlen($entityname) > 50) {
+               $entityname = "...".Toolbox::substr($entityname,
+                                                   Toolbox::strlen($entityname) -50,
+                                                   Toolbox::strlen($entityname));
+            }
+
          }
 
          echo "</th><th colspan='".$params['colspan']."'>";
@@ -2354,7 +2361,12 @@ class CommonDBTM extends CommonGLPI {
          } else {
             if ($this->maybeRecursive()) {
                if (Session::isMultiEntitiesMode()) {
-                  echo "<table class='tab_format'><tr class='headerRow responsive_hidden'><th>".$entityname."</th>";
+                  echo "<table class='tab_format'><tr class='headerRow responsive_hidden'><th>".$entityname;
+                  if ($entityname != $full_name) {
+                     echo "&nbsp;";
+                     Html::showToolTip($full_name);
+                  }
+                  echo "</th>";
                   echo "<th class='right'>".__('Child entities')."</th><th>";
                   if ($params['canedit']) {
                      if ( $this instanceof CommonDBChild) {
@@ -2482,7 +2494,7 @@ class CommonDBTM extends CommonGLPI {
             return false;
          }
       }
-    
+
       $this->right = $right;
       plugin::doHook('item_can', $this);
       switch ($this->right) {

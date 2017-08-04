@@ -870,6 +870,10 @@ class CommonGLPI {
                && Session::isMultiEntitiesMode()
                && $this->isEntityAssign()) {
             $entname = Dropdown::getDropdownName("glpi_entities", $this->fields["entities_id"]);
+            if (Toolbox::strlen($entname) > 50) {
+               $entname = "...".Toolbox::substr($entname, Toolbox::strlen($entname) -50, Toolbox::strlen($entname));
+            }
+
             if ($this->isRecursive()) {
                $entname = sprintf(__('%1$s + %2$s'), $entname, __('Child entities'));
             }
