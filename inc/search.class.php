@@ -2398,7 +2398,7 @@ class Search {
          case "glpi_entities.completename" :
             if (($itemtype == 'User')
                 && ($ID == 80)) {
-               
+
                $addtable2 = '';
                if ($meta) {
                   $addtable2 = "_".$meta_type;
@@ -2587,7 +2587,7 @@ class Search {
       global $CFG_GLPI;
 
       $condition = '';
-    
+
       switch ($itemtype) {
          case 'Reminder' :
             $condition = Reminder::addVisibilityRestrict();
@@ -2623,7 +2623,7 @@ class Search {
             }
             $condition .= ") ";
             break;
-            
+
          case 'Project' :
             $condition = '';
             if (!Session::haveRight("project", Project::READALL)) {
@@ -4268,6 +4268,23 @@ class Search {
                      }
                   }
                   return $out;
+               } elseif (isset($data['entities_id'])) {
+                  $entity = new Entity();
+                  $entity->getFromDB($data['entities_id']);
+                  $out = $entity->fields['name'];
+                  $out.= "&nbsp;";
+                  $out.= Html::showTooltip($entity->fields['completename'], ['display' => false]);
+                  return $out;
+               } else {
+                  $tmp    = new $itemtype();
+                  $entity = new Entity();
+                  if ($tmp->getFromDB($data['id'])
+                     && $entity->getFromDB($tmp->fields['entities_id'])) {
+                     $out = $entity->fields['name'];
+                     $out.= "&nbsp;";
+                     $out.= Html::showTooltip($entity->fields['completename'], ['display' => false]);
+                     return $out;
+                  }
                }
                break;
 
@@ -5381,7 +5398,7 @@ class Search {
                $search[$itemtype][24]['name']          = __('Technician in charge of the hardware');
 
                $search[$itemtype][80]['table']         = 'glpi_entities';
-               $search[$itemtype][80]['field']         = 'completename';
+               $search[$itemtype][80]['field']         = 'name';
                $search[$itemtype][80]['name']          = __('Entity');
                break;
 
