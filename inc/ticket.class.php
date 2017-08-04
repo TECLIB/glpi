@@ -3956,38 +3956,22 @@ class Ticket extends CommonITILObject {
          $text = sprintf(__('%1$s - %2$s'), $this->getTypeName(1),
                          sprintf(__('%1$s: %2$s'), __('ID'), $ID));
          if ($ismultientities) {
-            $entityname  = Dropdown::getDropdownName('glpi_entities',
-                                      $this->fields['entities_id']);
-            $full_name   = $entityname;
-            if (Toolbox::strlen($entityname) > 50) {
-               $entityname = "...".Toolbox::substr($entityname,
-                                                   Toolbox::strlen($entityname) -50,
-                                                   Toolbox::strlen($entityname));
-               $text = sprintf(__('%1$s (%2$s)'), $text, $entityname);
-               echo $text;
-               echo "&nbsp;";
-               Html::showToolTip($full_name);
-
-            } else {
-               echo sprintf(__('%1$s (%2$s)'), $text, $entityname);
-            }
-
+            $entity = new Entity();
+            $entity->getFromDB($this->fields['entities_id']);
+            $text = sprintf(__('%1$s (%2$s)'), $text, $entity->fields['name']);
+            echo $text;
+            echo "&nbsp;";
+            Html::showToolTip($entity->fields['completename']);
+         } else {
+            echo sprintf(__('%1$s (%2$s)'), $text, $entityname);
          }
       } else {
          if ($ismultientities) {
-            $entityname  = Dropdown::getDropdownName('glpi_entities',
-                                      $this->fields['entities_id']);
-            $full_name   = $entityname;
-            if (Toolbox::strlen($entityname) > 50) {
-               $entityname = "...".Toolbox::substr($entityname,
-                                                  Toolbox::strlen($entityname) -50,
-                                                  Toolbox::strlen($entityname));
-               printf(__('The ticket will be added in the entity %s'), $entityname);
-               echo "&nbsp;";
-               Html::showToolTip($full_name);
-            } else {
-               printf(__('The ticket will be added in the entity %s'), $entityname);
-            }
+            $entity = new Entity();
+            $entity->getFromDB($this->fields['entities_id']);
+            printf(__('The ticket will be added in the entity %s'), $entity->fields['name']);
+            echo "&nbsp;";
+            Html::showToolTip($entity->fields['completename']);
          } else {
             _e('New ticket');
          }

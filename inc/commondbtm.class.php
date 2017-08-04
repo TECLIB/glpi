@@ -2340,18 +2340,15 @@ class CommonDBTM extends CommonGLPI {
             }
             echo $nametype;
          }
-         $entityname = '';
+         $entityname   = '';
+         $completename = '';
          if (isset($this->fields["entities_id"])
             && Session::isMultiEntitiesMode()
             && $this->isEntityAssign()) {
-            $entityname = Dropdown::getDropdownName("glpi_entities", $this->fields["entities_id"]);
-            $full_name  = $entityname;
-            if (Toolbox::strlen($entityname) > 50) {
-               $entityname = "...".Toolbox::substr($entityname,
-                                                   Toolbox::strlen($entityname) -50,
-                                                   Toolbox::strlen($entityname));
-            }
-
+            $entity = new Entity();
+            $entity->getFromDB($this->fields['entities_id']);
+            $entityname = $entity->fields['name'];
+            $completename = $entity->fields['completename'];
          }
 
          echo "</th><th colspan='".$params['colspan']."'>";
@@ -2362,10 +2359,8 @@ class CommonDBTM extends CommonGLPI {
             if ($this->maybeRecursive()) {
                if (Session::isMultiEntitiesMode()) {
                   echo "<table class='tab_format'><tr class='headerRow responsive_hidden'><th>".$entityname;
-                  if ($entityname != $full_name) {
-                     echo "&nbsp;";
-                     Html::showToolTip($full_name);
-                  }
+                  echo "&nbsp;";
+                  Html::showToolTip($completename);
                   echo "</th>";
                   echo "<th class='right'>".__('Child entities')."</th><th>";
                   if ($params['canedit']) {
