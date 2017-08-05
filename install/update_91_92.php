@@ -1051,6 +1051,7 @@ function update91to92() {
       $DB->queryOrDie($query, "9.2 Add saved search alerts notification");
 
       $query = "INSERT INTO `glpi_notificationtargets`
+                     (`name`, `itemtype`, `date_mod`)
                 VALUES (null,'19','1','$notid');";
       $DB->queryOrDie($query, "9.2 Add saved search alerts notification targets");
 
