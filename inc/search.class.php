@@ -1221,7 +1221,6 @@ class Search {
 
                $search_config_top    .= Html::jsGetElementbyID('search_config_top').
                                                       ".dialog('open');\"";
-               $search_config_bottom .= " onClick=\"";
                $search_config_bottom .= Html::jsGetElementbyID('search_config_bottom').
                                                       ".dialog('open');\"";
 
@@ -1811,10 +1810,10 @@ class Search {
    **/
    static function getLogicalOperators() {
 
-      return ['AND'     => 'AND',
-                   'OR'      => 'OR',
-                   'AND NOT' => 'AND NOT',
-                   'OR NOT'  => 'OR NOT',];
+      return ['AND'     => __('AND'),
+                   'OR'      => __('OR'),
+                   'AND NOT' => __('AND NOT'),
+                   'OR NOT'  => __('OR NOT')];
    }
 
 
@@ -2805,17 +2804,6 @@ class Search {
       }
 
       /* Hook to restrict user right on current itemtype */
-      /* @since 9.2, see CommonDBTM::can for code sample */
-      $item = getItemForItemtype($itemtype);
-      Plugin::doHook("item_can", $item);
-      if (isset($item->add_where)) {
-         if ($condition) {
-            $condition = "($condition) AND ({$item->add_where})";
-         } else {
-            $condition = $item->add_where;
-         }
-         unset($item->add_where);
-      }
       list($itemtype, $condition) = Plugin::doHookFunction('add_default_where', [$itemtype, $condition]);
       return $condition;
    }
