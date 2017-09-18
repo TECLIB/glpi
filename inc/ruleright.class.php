@@ -55,7 +55,7 @@ class RuleRight extends Rule {
    **/
    function maxActionsCount() {
       // Unlimited
-      return 4;
+      return 6;
    }
 
 
@@ -123,6 +123,14 @@ class RuleRight extends Rule {
             switch ($action->fields["action_type"]) {
                case "assign" :
                   switch ($action->fields["field"]) {
+                     case "entities_id_default" :
+                        $output['entities_id'] = $action->fields["value"];
+                        break;
+
+                     case "profiles_id_default" :
+                        $output['profiles_id'] = $action->fields["value"];
+                        break;
+
                      case "entities_id" :
                         $entity[] = $action->fields["value"];
                         break;
@@ -152,11 +160,23 @@ class RuleRight extends Rule {
                      case "_affect_entity_by_tag" :
                      case "_affect_entity_by_domain" :
                      case "_affect_entity_by_completename" :
+                     case "_affect_entity_default_by_dn" :
+                     case "_affect_entity_default_by_tag" :
                         foreach ($this->regex_results as $regex_result) {
                            $res = RuleAction::getRegexResultById($action->fields["value"],
                                                                  $regex_result);
                            if ($res != null) {
                               switch ($action->fields["field"]) {
+                                 case "_affect_entity_default_by_dn" :
+                                    $output['entities_id'] = Entity::getEntityIDByDN(addslashes($res));
+                                    $entity_found          = -1;
+                                    break;
+
+                                 case "_affect_entity_default_by_tag" :
+                                    $output['entitites_id'] = Entity::getEntityIDByTag(addslashes($res));
+                                    $entity_found           = -1;
+                                    break;
+
                                  case "_affect_entity_by_dn" :
                                     $entity_found = Entity::getEntityIDByDN(addslashes($res));
                                     break;
@@ -327,6 +347,24 @@ class RuleRight extends Rule {
       $actions['_ignore_user_import']['name']               = __('To be unaware of import');
       $actions['_ignore_user_import']['type']               = 'yesonly';
       $actions['_ignore_user_import']['table']              = '';
+
+      $actions['profiles_id_default']['name']  = __('Default profile');
+      $actions['profiles_id_default']['type']  = 'dropdown';
+      $actions['profiles_id_default']['table'] = 'glpi_profiles';
+
+      $actions['entities_id_default']['name']  = __('Default entity');
+      $actions['entities_id_default']['type']  = 'dropdown';
+      $actions['entities_id_default']['table'] = 'glpi_entities';
+
+      $actions['_affect_entity_default_by_dn']['name']              = __('Default entity based on LDAP information');
+      $actions['_affect_entity_default_by_dn']['type']              = 'text';
+      $actions['_affect_entity_default_by_dn']['force_actions']     = ['regex_result'];
+      $actions['_affect_entity_default_by_dn']['duplicatewith']     = 'entities_id_default';
+
+      $actions['_affect_entity_default_by_tag']['name']             = __('Default entity from TAG');
+      $actions['_affect_entity_default_by_tag']['type']             = 'text';
+      $actions['_affect_entity_default_by_tag']['force_actions']    = ['regex_result'];
+      $actions['_affect_entity_default_by_tag']['duplicatewith']    = 'entities_id_default';
 
       return $actions;
    }
