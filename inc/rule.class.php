@@ -2320,7 +2320,6 @@ class Rule extends CommonDBTM {
                $display = true;
                break;
          }
-         $tested = true;
       }
       //Not a standard condition
       if (!$tested) {
