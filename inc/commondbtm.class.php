@@ -929,7 +929,7 @@ class CommonDBTM extends CommonGLPI {
                $this->post_addItem();
                $this->addMessageOnAddAction();
 
-               if ($this->dohistory && $history) {
+               if ($this->dohistory && $this->input['_no_history']) {
                   $changes[0] = 0;
                   $changes[1] = $changes[2] = "";
 
@@ -1227,7 +1227,7 @@ class CommonDBTM extends CommonGLPI {
 
                if (count($this->updates)) {
                   if ($this->updateInDB($this->updates,
-                                        ($this->dohistory && $history ? $this->oldvalues
+                                        ($this->dohistory && $this->input['_no_history'] ? $this->oldvalues
                                                                       : []))) {
                      $this->addMessageOnUpdateAction();
                      Plugin::doHook("item_update", $this);
@@ -1459,7 +1459,7 @@ class CommonDBTM extends CommonGLPI {
             } else {
                $this->addMessageOnDeleteAction();
 
-               if ($this->dohistory && $history) {
+               if ($this->dohistory && $this->input['_no_history']) {
                   $changes[0] = 0;
                   $changes[1] = $changes[2] = "";
                   $logaction  = Log::HISTORY_DELETE_ITEM;
